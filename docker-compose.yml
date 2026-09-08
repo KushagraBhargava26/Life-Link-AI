@@ -1,0 +1,221 @@
+# docker-compose.yml
+# LifeLink AI — Multi-Service Orchestration
+# Architecture Reference: ARCHITECTURE.md Section 29 (Deployment Architecture)
+#
+# Services:
+#   - nginx        : Reverse proxy (port 80, 443 public)
+#   - frontend     : Next.js 14 (port 3000, internal)
+#   - backend      : FastAPI (port 8000, internal)
+#   - ai-service   : AI FastAPI (port 8001, internal only)
+#   - postgres     : PostgreSQL 15 (port 5432, internal only)
+#   - redis        : Redis 7 (port 6379, internal only)
+
+services:
+  # ---------------------------------------------------------------------------
+  # Nginx — Reverse Proxy
+  # Routes /api/* to backend, /* to frontend
+  # ---------------------------------------------------------------------------
+  nginx:
+    image: nginx:alpine
+    container_name: lifelink-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./docker/nginx.conf:/etc/nginx/nginx.conf:ro
+      - nginx_logs:/var/log/nginx
+    depends_on:
+      backend:
+        condition: service_healthy
+      frontend:
+        condition: service_started
+    networks:
+      - lifelink-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ---------------------------------------------------------------------------
+  # Frontend — Next.js 14
+  # ---------------------------------------------------------------------------
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: lifelink-frontend
+    expose:
+      - "3000"
+    environment:
+      - NODE_ENV=${APP_ENV:-development}
+      - NEXT_PUBLIC_API_BASE_URL=${NEXT_PUBLIC_API_BASE_URL:-http://localhost/api/v1}
+      - NEXT_PUBLIC_APP_NAME=${NEXT_PUBLIC_APP_NAME:-LifeLink AI}
+      - NEXT_PUBLIC_APP_VERSION=${NEXT_PUBLIC_APP_VERSION:-1.0.0}
+      - HOSTNAME=0.0.0.0
+    depends_on:
+      - backend
+    networks:
+      - lifelink-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+
+  # ---------------------------------------------------------------------------
+  # Backend — FastAPI (Python 3.11)
+  # ---------------------------------------------------------------------------
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: lifelink-backend
+    expose:
+      - "8000"
+    environment:
+      - APP_ENV=${APP_ENV:-development}
+      - APP_NAME=${APP_NAME:-LifeLink AI}
+      - APP_VERSION=${APP_VERSION:-1.0.0}
+      - SECRET_KEY=${SECRET_KEY}
+      - ACCESS_TOKEN_TTL=${ACCESS_TOKEN_TTL:-900}
+      - REFRESH_TOKEN_TTL=${REFRESH_TOKEN_TTL:-604800}
+      - DATABASE_URL=${DATABASE_URL:-postgresql+asyncpg://postgres:password@postgres:5432/lifelink}
+      - DB_POOL_MIN=${DB_POOL_MIN:-5}
+      - DB_POOL_MAX=${DB_POOL_MAX:-20}
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379/0}
+      - AI_SERVICE_URL=${AI_SERVICE_URL:-http://ai-service:8001}
+      - AI_SERVICE_API_KEY=${AI_SERVICE_API_KEY}
+      - AI_MATCHING_TIMEOUT_SECONDS=${AI_MATCHING_TIMEOUT_SECONDS:-5}
+      - AI_MAX_DONORS_PER_MATCH=${AI_MAX_DONORS_PER_MATCH:-10}
+      - AI_DEFAULT_SEARCH_RADIUS_KM=${AI_DEFAULT_SEARCH_RADIUS_KM:-50}
+      - FIREBASE_CREDENTIALS_JSON=${FIREBASE_CREDENTIALS_JSON}
+      - SMTP_HOST=${SMTP_HOST:-smtp.gmail.com}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_USERNAME=${SMTP_USERNAME}
+      - SMTP_PASSWORD=${SMTP_PASSWORD}
+      - SMTP_FROM_NAME=${SMTP_FROM_NAME:-LifeLink AI}
+      - SMTP_FROM_EMAIL=${SMTP_FROM_EMAIL}
+      - NOMINATIM_BASE_URL=${NOMINATIM_BASE_URL:-https://nominatim.openstreetmap.org}
+      - GOOGLE_MAPS_API_KEY=${GOOGLE_MAPS_API_KEY:-}
+      - CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS:-http://localhost:3000}
+      - RATE_LIMIT_GENERAL=${RATE_LIMIT_GENERAL:-100}
+      - RATE_LIMIT_LOGIN=${RATE_LIMIT_LOGIN:-5}
+      - RATE_LIMIT_REGISTER=${RATE_LIMIT_REGISTER:-10}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      ai-service:
+        condition: service_healthy
+    networks:
+      - lifelink-network
+    restart: unless-stopped
+    volumes:
+      - ./backend:/app
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+  # ---------------------------------------------------------------------------
+  # AI Service — FastAPI ML Service (Internal Only)
+  # NOT exposed outside the Docker network
+  # ---------------------------------------------------------------------------
+  ai-service:
+    build:
+      context: ./ai
+      dockerfile: Dockerfile
+    container_name: lifelink-ai-service
+    expose:
+      - "8001"
+    environment:
+      - APP_ENV=${APP_ENV:-development}
+      - AI_SERVICE_API_KEY=${AI_SERVICE_API_KEY}
+      - AI_MATCHING_TIMEOUT_SECONDS=${AI_MATCHING_TIMEOUT_SECONDS:-5}
+      - AI_MAX_DONORS_PER_MATCH=${AI_MAX_DONORS_PER_MATCH:-10}
+      - AI_DEFAULT_SEARCH_RADIUS_KM=${AI_DEFAULT_SEARCH_RADIUS_KM:-50}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    networks:
+      - lifelink-network
+    restart: unless-stopped
+    volumes:
+      - ./ai:/app
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+  # ---------------------------------------------------------------------------
+  # PostgreSQL 15 — Primary Database (Internal Only)
+  # ---------------------------------------------------------------------------
+  postgres:
+    image: postgis/postgis:15-3.3-alpine
+    container_name: lifelink-postgres
+    expose:
+      - "5432"
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-password}
+      - POSTGRES_DB=${POSTGRES_DB:-lifelink}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - lifelink-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-lifelink}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # ---------------------------------------------------------------------------
+  # Redis 7 — Cache and Session Store (Internal Only)
+  # ---------------------------------------------------------------------------
+  redis:
+    image: redis:7-alpine
+    container_name: lifelink-redis
+    expose:
+      - "6379"
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    networks:
+      - lifelink-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+# =============================================================================
+# Networks
+# =============================================================================
+networks:
+  lifelink-network:
+    driver: bridge
+    name: lifelink-network
+
+# =============================================================================
+# Volumes
+# =============================================================================
+volumes:
+  postgres_data:
+    name: lifelink-postgres-data
+  redis_data:
+    name: lifelink-redis-data
+  nginx_logs:
+    name: lifelink-nginx-logs

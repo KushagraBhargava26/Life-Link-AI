@@ -1,0 +1,74 @@
+# EditorConfig — LifeLink AI
+# Architecture Reference: ARCHITECTURE.md Section 31 (Coding Standards)
+# Ensures consistent formatting across all editors and contributors
+
+root = true
+
+# =============================================================================
+# All files
+# =============================================================================
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+# =============================================================================
+# Python — Backend and AI Service
+# Line length: 88 (Black default) enforced by Ruff
+# =============================================================================
+[*.py]
+indent_style = space
+indent_size = 4
+max_line_length = 88
+
+# =============================================================================
+# TypeScript and JavaScript — Frontend
+# =============================================================================
+[*.{ts,tsx,js,jsx,mjs,cjs}]
+indent_style = space
+indent_size = 2
+max_line_length = 100
+
+# =============================================================================
+# JSON, YAML, TOML — Configuration Files
+# =============================================================================
+[*.{json,yml,yaml,toml}]
+indent_style = space
+indent_size = 2
+
+# =============================================================================
+# Markdown — Documentation
+# =============================================================================
+[*.md]
+trim_trailing_whitespace = false
+indent_style = space
+indent_size = 2
+
+# =============================================================================
+# CSS, SCSS — Stylesheets
+# =============================================================================
+[*.{css,scss}]
+indent_style = space
+indent_size = 2
+
+# =============================================================================
+# SQL
+# =============================================================================
+[*.sql]
+indent_style = space
+indent_size = 4
+
+# =============================================================================
+# Docker
+# =============================================================================
+[Dockerfile*]
+indent_style = space
+indent_size = 4
+
+# =============================================================================
+# Shell Scripts
+# =============================================================================
+[*.{sh,bash}]
+indent_style = space
+indent_size = 4

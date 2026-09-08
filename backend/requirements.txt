@@ -1,0 +1,83 @@
+# backend/requirements.txt
+# LifeLink AI — Backend Python Dependencies
+# Architecture Reference: ARCHITECTURE.md Section 26 (Recommended Tech Stack)
+#
+# Pin exact versions for reproducibility in production.
+# Run: pip install -r requirements.txt
+
+# =============================================================================
+# Web Framework
+# =============================================================================
+fastapi==0.111.1
+uvicorn[standard]==0.30.1
+python-multipart==0.0.9            # Required for FastAPI form data parsing
+
+# =============================================================================
+# Database — PostgreSQL + SQLAlchemy
+# =============================================================================
+sqlalchemy==2.0.31                  # Async ORM
+asyncpg==0.29.0                     # Async PostgreSQL driver
+alembic==1.13.2                     # Database migrations
+psycopg2-binary==2.9.9              # Sync driver for Alembic scripts
+
+# =============================================================================
+# Caching — Redis
+# =============================================================================
+redis[hiredis]==5.0.7               # Redis async client with C extension
+
+# =============================================================================
+# Authentication and Security
+# =============================================================================
+python-jose[cryptography]==3.3.0    # JWT encoding/decoding
+passlib[bcrypt]==1.7.4              # Password hashing with bcrypt
+cryptography==42.0.8                # Required by python-jose
+
+# =============================================================================
+# Validation — Pydantic v2
+# =============================================================================
+pydantic==2.8.2
+pydantic-settings==2.3.4            # Settings management from env vars
+email-validator==2.2.0              # Email validation in Pydantic
+
+# =============================================================================
+# HTTP Client — For AI Service Communication
+# =============================================================================
+httpx==0.27.0                       # Async HTTP client for AI gateway
+
+# =============================================================================
+# Notifications — Firebase and SMTP
+# =============================================================================
+firebase-admin==6.5.0               # Firebase Cloud Messaging (push notifications)
+aiosmtplib==3.0.1                   # Async SMTP email delivery
+
+# =============================================================================
+# Maps and Geocoding
+# =============================================================================
+# Haversine distance calculation — pure Python, no external service
+# Nominatim calls made via httpx (already listed above)
+
+# =============================================================================
+# Background Tasks
+# =============================================================================
+# MVP: synchronous tasks within request cycle
+# v2.0: Celery + Redis will be added here
+
+# =============================================================================
+# Logging
+# =============================================================================
+structlog==24.4.0                   # Structured JSON logging
+
+# =============================================================================
+# Development and Testing
+# =============================================================================
+pytest==8.3.1
+pytest-asyncio==0.23.7
+pytest-cov==5.0.0
+factory-boy==3.3.0                  # Test data factories
+
+# =============================================================================
+# Linting and Type Checking (also used in pre-commit)
+# =============================================================================
+ruff==0.5.0
+mypy==1.10.0
+types-passlib==1.7.7.20240327

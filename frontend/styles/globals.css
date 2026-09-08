@@ -1,0 +1,150 @@
+/* frontend/styles/globals.css */
+/* LifeLink AI — Professional Healthcare Design System */
+/* Architecture Reference: ARCHITECTURE.md Section 15 */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* =============================================================================
+   Design Tokens — Semantic Light & Dark Themes
+   ============================================================================= */
+@layer base {
+  /* LIGHT THEME (Default :root) */
+  :root {
+    --background: 210 25% 98%;      /* #f8fafc slate-50 */
+    --foreground: 222 47% 11%;      /* #0f172a slate-900 */
+
+    /* Card & Surfaces */
+    --card: 0 0% 100%;              /* #ffffff clean white */
+    --card-foreground: 222 47% 11%;
+    --card-elevated: 210 20% 96%;   /* #f1f5f9 slate-100 */
+
+    /* Borders & Inputs */
+    --border: 214 32% 90%;          /* #e2e8f0 slate-200 */
+    --input: 214 32% 86%;           /* #cbd5e1 slate-300 */
+    --ring: 350 75% 45%;            /* Crimson focus ring */
+
+    /* Brand Primary — LifeLink Healthcare Crimson */
+    --primary: 350 75% 45%;         /* #c51636 */
+    --primary-hover: 350 75% 38%;
+    --primary-foreground: 0 0% 100%;
+
+    /* Neutral Secondary & Muted */
+    --secondary: 210 30% 93%;       /* #e2e8f0 */
+    --secondary-foreground: 222 47% 11%;
+    --muted: 210 30% 95%;           /* #f1f5f9 */
+    --muted-foreground: 215 16% 45%;/* #64748b slate-500 */
+
+    /* Status Colors */
+    --critical: 0 75% 50%;          /* #dc2626 */
+    --critical-subtle: 0 95% 97%;   /* #fef2f2 */
+    --warning: 28 85% 50%;          /* #ea580c */
+    --warning-subtle: 35 100% 96%;  /* #fffbeb */
+    --success: 142 70% 40%;         /* #16a34a */
+    --success-subtle: 138 76% 96%;  /* #f0fdf4 */
+    --info: 217 91% 55%;            /* #2563eb */
+    --info-subtle: 214 95% 96%;     /* #eff6ff */
+
+    --radius: 0.625rem;             /* 10px standard radius */
+  }
+
+  /* DARK THEME (.dark class) — Deep Slate/Navy Surfaces (NOT pure pitch black) */
+  .dark {
+    --background: 222 47% 7%;       /* #090e1a deep slate */
+    --foreground: 210 40% 98%;      /* #f8fafc */
+
+    /* Card & Surfaces */
+    --card: 222 47% 10%;            /* #0f172a slate-900 */
+    --card-foreground: 210 40% 98%;
+    --card-elevated: 217 33% 14%;   /* #1e293b slate-800 */
+
+    /* Borders & Inputs */
+    --border: 217 33% 18%;          /* #1e293b subtle slate border */
+    --input: 217 33% 22%;
+    --ring: 350 80% 55%;
+
+    /* Brand Primary — Radiant Medical Ruby */
+    --primary: 350 80% 52%;         /* #e11d48 */
+    --primary-hover: 350 80% 46%;
+    --primary-foreground: 0 0% 100%;
+
+    /* Neutral Secondary & Muted */
+    --secondary: 217 33% 15%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217 33% 13%;
+    --muted-foreground: 215 20% 65%;/* #94a3b8 slate-400 */
+
+    /* Status Colors */
+    --critical: 0 75% 52%;          /* #dc2626 */
+    --critical-subtle: 0 65% 15%;
+    --warning: 28 85% 52%;          /* #ea580c */
+    --warning-subtle: 28 70% 14%;
+    --success: 142 70% 45%;         /* #16a34a */
+    --success-subtle: 142 60% 13%;
+    --info: 217 91% 60%;
+    --info-subtle: 217 80% 15%;
+  }
+
+  * {
+    border-color: hsl(var(--border));
+    box-sizing: border-box;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+    font-feature-settings: "rlig" 1, "calt" 1;
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
+
+  /* Accessible focus outline */
+  *:focus-visible {
+    outline: none;
+    ring: 2px;
+    box-shadow: 0 0 0 2px hsl(var(--background)), 0 0 0 4px hsl(var(--ring));
+  }
+}
+
+/* =============================================================================
+   Utilities & Animations
+   ============================================================================= */
+@layer utilities {
+  .animate-pulse-emergency {
+    animation: pulse-emergency 1.8s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  @keyframes pulse-emergency {
+    0%, 100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 0.6;
+      transform: scale(0.98);
+    }
+  }
+
+  /* Subtle card elevation */
+  .surface-card {
+    background-color: hsl(var(--card));
+    border: 1px solid hsl(var(--border));
+    border-radius: var(--radius);
+  }
+
+  .surface-elevated {
+    background-color: hsl(var(--card-elevated));
+    border: 1px solid hsl(var(--border));
+    border-radius: var(--radius);
+  }
+}
+
+.leaflet-container {
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+}

@@ -1,0 +1,114 @@
+# LifeLink AI — Pre-commit Configuration
+# Architecture Reference: ARCHITECTURE.md Section 31 (Coding Standards)
+#
+# Install:
+#   pip install pre-commit
+#   pre-commit install
+#
+# Run manually:
+#   pre-commit run --all-files
+
+repos:
+  # ===========================================================================
+  # General Code Quality
+  # ===========================================================================
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: trailing-whitespace
+        name: Trim trailing whitespace
+      - id: end-of-file-fixer
+        name: Ensure files end with newline
+      - id: check-yaml
+        name: Check YAML syntax
+      - id: check-toml
+        name: Check TOML syntax
+      - id: check-json
+        name: Check JSON syntax
+      - id: check-merge-conflict
+        name: Check for merge conflict markers
+      - id: check-added-large-files
+        name: Prevent large files from being committed
+        args: ["--maxkb=1024"]
+      - id: detect-private-key
+        name: Detect private keys
+      - id: check-case-conflict
+        name: Check for case conflicts
+      - id: mixed-line-ending
+        name: Check for mixed line endings
+        args: ["--fix=lf"]
+
+  # ===========================================================================
+  # Python — Ruff Linting and Formatting
+  # ===========================================================================
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.5.0
+    hooks:
+      - id: ruff
+        name: Ruff linter
+        args: ["--fix"]
+        files: ^(backend|ai)/.*\.py$
+      - id: ruff-format
+        name: Ruff formatter (Black-compatible)
+        files: ^(backend|ai)/.*\.py$
+
+  # ===========================================================================
+  # Python — Type Checking via mypy
+  # ===========================================================================
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.10.0
+    hooks:
+      - id: mypy
+        name: mypy type checker (backend)
+        files: ^backend/.*\.py$
+        additional_dependencies:
+          - pydantic>=2.0
+          - sqlalchemy>=2.0
+          - fastapi>=0.111.0
+        args: ["--config-file=backend/pyproject.toml"]
+      - id: mypy
+        name: mypy type checker (ai service)
+        files: ^ai/.*\.py$
+        additional_dependencies:
+          - pydantic>=2.0
+          - fastapi>=0.111.0
+        args: ["--config-file=ai/pyproject.toml"]
+
+  # ===========================================================================
+  # Frontend — ESLint and Prettier
+  # ===========================================================================
+  - repo: https://github.com/pre-commit/mirrors-prettier
+    rev: v3.3.2
+    hooks:
+      - id: prettier
+        name: Prettier formatter
+        files: ^frontend/.*\.(ts|tsx|js|jsx|json|css|md)$
+        exclude: ^frontend/(node_modules|.next)/
+
+  # ===========================================================================
+  # Security
+  # ===========================================================================
+  - repo: https://github.com/Yelp/detect-secrets
+    rev: v1.5.0
+    hooks:
+      - id: detect-secrets
+        name: Detect secrets in code
+        args: ["--baseline", ".secrets.baseline"]
+        exclude: .env.example
+
+  # ===========================================================================
+  # Conventional Commits
+  # ===========================================================================
+  - repo: https://github.com/compilerla/conventional-pre-commit
+    rev: v3.4.0
+    hooks:
+      - id: conventional-pre-commit
+        name: Validate commit message format
+        stages: [commit-msg]
+        args: ["feat", "fix", "docs", "refactor", "test", "chore", "style"]
+
+ci:
+  autofix_commit_msg: "chore: auto-fix pre-commit hooks"
+  autofix_prs: true
+  autoupdate_branch: "main"
+  autoupdate_commit_msg: "chore: update pre-commit hooks"

@@ -1,0 +1,33 @@
+# ai/pyproject.toml
+# LifeLink AI — AI Service Project Configuration
+
+[tool.ruff]
+target-version = "py311"
+line-length = 88
+src = ["app"]
+exclude = [".git", "__pycache__", ".venv", "venv"]
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "I", "B", "UP", "N"]
+ignore = ["E501"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+warn_return_any = true
+ignore_missing_imports = false
+plugins = ["pydantic.mypy"]
+
+[[tool.mypy.overrides]]
+module = ["structlog.*", "sklearn.*", "scipy.*", "numpy.*"]
+ignore_missing_imports = true
+
+[project]
+name = "lifelink-ai-service"
+version = "1.0.0-alpha"
+description = "LifeLink AI — AI Inference Microservice"
+requires-python = ">=3.11"

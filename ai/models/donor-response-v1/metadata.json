@@ -1,0 +1,28 @@
+{
+  "model_name": "donor_response_propensity",
+  "model_version": "donor-response-v1",
+  "algorithm": "StandardScaler + LogisticRegression(class_weight='balanced')",
+  "dataset_name": "UCI Blood Transfusion Service Center",
+  "dataset_license": "CC BY 4.0",
+  "dataset_citation": "Yeh, I-Cheng, Yang, King-Jang, and Ting, Tao-Ming, 'Knowledge discovery on RFM model using Bernoulli sequence,' Expert Systems with Applications, 2008.",
+  "dataset_records": 748,
+  "target_variable": "donated_blood (1 = donated in target month, 0 = did not)",
+  "features_trained": [
+    "recency_months",
+    "frequency_donations",
+    "time_months"
+  ],
+  "feature_dropped_collinear": "monetary_volume_cc (strictly 250 * frequency)",
+  "train_validation_strategy": "5-fold Stratified Cross-Validation",
+  "metrics": {
+    "accuracy": 0.6618,
+    "precision": 0.3907,
+    "recall": 0.7528,
+    "f1": 0.5144,
+    "roc_auc": 0.7521,
+    "pr_auc": 0.5028,
+    "brier_score": 0.2055
+  },
+  "trained_at_utc": "2026-09-07T16:00:31.279107+00:00",
+  "limitations": "Model estimates historical response propensity from RFM features; does not determine medical compatibility or guarantee real-world donor response."
+}

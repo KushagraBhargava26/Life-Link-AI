@@ -1,0 +1,133 @@
+# LifeLink AI — Git Ignore
+# Architecture Reference: ARCHITECTURE.md Section 33 (Git Branch Strategy)
+
+# =============================================================================
+# Python — Backend and AI Service
+# =============================================================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
+*.cover
+*.hypothesis/
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+backend/venv/
+ai/venv/
+
+# Alembic
+# Keep alembic/versions tracked — migration files must be committed
+# Only ignore local alembic temp files
+backend/alembic/.alembic_history_cache
+
+# =============================================================================
+# Node.js — Frontend
+# =============================================================================
+node_modules/
+frontend/node_modules/
+.npm/
+.yarn/
+.pnp
+.pnp.js
+
+# Next.js build output
+.next/
+out/
+frontend/.next/
+frontend/out/
+
+# =============================================================================
+# Docker
+# =============================================================================
+# Docker override files for local dev (not committed)
+docker-compose.override.yml
+
+# =============================================================================
+# Environment Variables — NEVER COMMIT .env
+# =============================================================================
+.env
+.env.*
+!.env.example
+*.testbak
+backend/.env
+frontend/.env.local
+ai/.env
+
+# =============================================================================
+# IDE and Editor Files
+# =============================================================================
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# =============================================================================
+# Logs
+# =============================================================================
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# =============================================================================
+# OS-specific
+# =============================================================================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# =============================================================================
+# Test Artifacts
+# =============================================================================
+.pytest_cache/
+test-results/
+playwright-report/
+
+# =============================================================================
+# AI / ML Artifacts — Model files (large binary files tracked separately)
+# =============================================================================
+ai/models/*.pkl
+ai/models/*.pt
+ai/models/*.h5
+ai/models/*.onnx
+
+# =============================================================================
+# Secrets
+# =============================================================================
+*.pem
+*.key
+*.crt
+firebase-credentials.json
+service-account.json
+
+# =============================================================================
+# Temporary Files
+# =============================================================================
+*.tmp
+*.temp
+.cache/
+tmp/
