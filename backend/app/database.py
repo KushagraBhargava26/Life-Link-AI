@@ -125,13 +125,25 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
 async def init_db() -> None:
     """
     Initialize database connection pool on application startup.
-
+    Creates all tables if they do not already exist (idempotent).
     Called from the FastAPI lifespan context manager in main.py.
-    Phase 1.1: Placeholder — connection created on first use.
-    Phase 1.2+: Will run PostGIS extension check and initial health query.
     """
     engine = get_engine()
     logger.info("Database connection pool initialized", url=settings.DATABASE_URL.split("@")[-1])
+
+    # Import all models so SQLAlchemy metadata is populated before create_all
+    from app.modules.auth.models import User, UserRole  # noqa: F401
+    from app.modules.donor.models import Donor, DonorEmergencyResponse  # noqa: F401
+    from app.modules.hospital.models import Hospital, HospitalStaff  # noqa: F401
+    from app.modules.blood_bank.models import BloodBank  # noqa: F401
+    from app.modules.inventory.models import BloodInventory, InventoryHistory, BloodBankEmergencyResponse  # noqa: F401
+    from app.modules.emergency.models import EmergencyRequest  # noqa: F401
+    from app.modules.matching.models import MatchRun, MatchCandidate  # noqa: F401
+
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+
+    logger.info("Database tables verified / created")
 
 
 async def close_db() -> None:

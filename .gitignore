@@ -131,3 +131,4 @@ service-account.json
 *.temp
 .cache/
 tmp/
+.lifelink_launcher.pid

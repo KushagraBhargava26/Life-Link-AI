@@ -42,6 +42,26 @@ export default function RegisterPage() {
       setIsLoading(false);
       return;
     }
+    if (password.length < 8) {
+      setErrorMessage('Password must be at least 8 characters long.');
+      setIsLoading(false);
+      return;
+    }
+    if (!/[A-Z]/.test(password)) {
+      setErrorMessage('Password must contain at least one uppercase letter.');
+      setIsLoading(false);
+      return;
+    }
+    if (!/[0-9]/.test(password)) {
+      setErrorMessage('Password must contain at least one digit.');
+      setIsLoading(false);
+      return;
+    }
+    if (!/[!@#$%^&*(),.?":{}|<>\-_+=~[\]/`]/.test(password)) {
+      setErrorMessage('Password must contain at least one special character (e.g. @, #, !, $).');
+      setIsLoading(false);
+      return;
+    }
 
     try {
       const regResp = await authService.register({
@@ -73,11 +93,22 @@ export default function RegisterPage() {
       }
 
     } catch (err: any) {
-      const msg =
-        err.response?.data?.error?.message ||
-        err.message ||
-        'Registration failed. Password must be 8+ chars with uppercase, number, and symbol.';
-      setErrorMessage(msg);
+      // Extract per-field errors from the backend validation error envelope
+      const fieldErrors: { field: string; message: string }[] | undefined =
+        err.response?.data?.error?.details?.fields;
+
+      if (fieldErrors && fieldErrors.length > 0) {
+        // Show only the first field error for clarity, stripping the "body → " prefix
+        const first = fieldErrors[0];
+        const fieldLabel = first.field.replace(/^body\s*→\s*/i, '').replace(/_/g, ' ');
+        setErrorMessage(`${fieldLabel}: ${first.message}`);
+      } else {
+        const msg =
+          err.response?.data?.error?.message ||
+          err.message ||
+          'Registration failed. Please check your inputs and try again.';
+        setErrorMessage(msg);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -183,6 +214,20 @@ export default function RegisterPage() {
                   onChange={(e) => setPassword(e.target.value)}
                   required
                 />
+                {password.length > 0 && (
+                  <ul className="mt-1.5 space-y-0.5 text-[11px]">
+                    {[
+                      { label: 'At least 8 characters', ok: password.length >= 8 },
+                      { label: 'One uppercase letter', ok: /[A-Z]/.test(password) },
+                      { label: 'One digit', ok: /[0-9]/.test(password) },
+                      { label: 'One special character (!@#$…)', ok: /[!@#$%^&*(),.?":{}|<>\-_+=~[\]/`]/.test(password) },
+                    ].map(({ label, ok }) => (
+                      <li key={label} className={`flex items-center gap-1 ${ok ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'}`}>
+                        <span>{ok ? '✓' : '○'}</span> {label}
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
 
               <div className="pt-2">

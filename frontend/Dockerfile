@@ -35,6 +35,8 @@ COPY . .
 
 # Disable Next.js telemetry
 ENV NEXT_TELEMETRY_DISABLED=1
+# Prevent next/font from fetching Google Fonts during build (no outbound internet in Docker)
+ENV NEXT_FONT_GOOGLE_MOCKED=1
 
 # Build the application
 RUN npm run build

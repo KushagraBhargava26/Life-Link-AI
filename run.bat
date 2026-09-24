@@ -33,7 +33,33 @@ if not exist ".env" (
     goto :error
 )
 
-:: Step 3 — Start the stack
+:: Step 3 — Pull required images (with retry for slow connections)
+set "COMPOSE_HTTP_TIMEOUT=300"
+set "DOCKER_CLIENT_TIMEOUT=300"
+echo Pulling required Docker images (this may take a few minutes on first run)...
+
+set "PULL_IMAGES=nginx:alpine redis:7-alpine postgis/postgis:15-3.3-alpine"
+for %%I in (%PULL_IMAGES%) do (
+    set "PULL_OK=0"
+    for /L %%A in (1,1,3) do (
+        if "!PULL_OK!"=="0" (
+            echo [Attempt %%A/3] Pulling %%I ...
+            docker pull %%I
+            if !ERRORLEVEL! equ 0 (
+                set "PULL_OK=1"
+                echo [OK] %%I pulled successfully.
+            ) else (
+                echo [WARN] Pull attempt %%A failed. Retrying...
+            )
+        )
+    )
+    if "!PULL_OK!"=="0" (
+        set "ERR_REASON=Failed to pull image %%I after 3 attempts. Check your internet connection and try again."
+        goto :error
+    )
+)
+
+:: Step 3b — Start the stack
 echo Starting all containers...
 docker compose up -d
 if %ERRORLEVEL% neq 0 (
