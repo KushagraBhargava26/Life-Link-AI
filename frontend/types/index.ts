@@ -164,6 +164,8 @@ export interface EmergencyRequestData {
   patient_name?: string | null;
   patient_age?: number | null;
   notes?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
   created_at: string;
   updated_at: string;
 }

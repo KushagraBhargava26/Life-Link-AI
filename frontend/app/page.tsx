@@ -74,7 +74,7 @@ export default function HomePage() {
   const handleTrack = (e: React.FormEvent) => {
     e.preventDefault();
     if (trackingId.trim()) {
-      router.push(`/emergency/track/${encodeURIComponent(trackingId.trim())}`);
+      router.push(`/hospital/emergency/track/${encodeURIComponent(trackingId.trim())}`);
     }
   };
 
@@ -97,7 +97,7 @@ export default function HomePage() {
               </span>
             </div>
             <Link
-              href="/emergency"
+              href="/hospital/emergency"
               className="font-semibold text-critical hover:underline underline-offset-2 flex items-center gap-1 shrink-0"
             >
               <span>Emergency Intake Desk</span>
@@ -193,11 +193,11 @@ export default function HomePage() {
                     <div className="space-y-2">
                       <h3 className="text-sm font-bold text-foreground">Immediate Emergency Requisition</h3>
                       <p className="text-muted-foreground">
-                        Need blood urgently for a patient or surgical emergency? Create an emergency requisition without an account.
+                        Need blood urgently for a patient or surgical emergency? Verified hospital clinical teams can issue emergency transport requisitions.
                       </p>
-                      <Link href="/emergency" className="block pt-1">
+                      <Link href="/hospital/emergency" className="block pt-1">
                         <Button variant="danger" size="md" className="w-full font-bold shadow-sm">
-                          <span>🚨 Create Emergency Request</span>
+                          <span>🚨 Hospital Emergency Desk</span>
                         </Button>
                       </Link>
                     </div>
@@ -287,7 +287,7 @@ export default function HomePage() {
                       </p>
                     </div>
                   </div>
-                  <Link href={`/emergency?blood_type=${encodeURIComponent(selectedBlood)}`}>
+                  <Link href={`/hospital/emergency?blood_type=${encodeURIComponent(selectedBlood)}`}>
                     <Button variant="outline" size="sm" className="font-semibold text-xs">
                       <span>🚨 Request Type {selectedBlood}</span>
                     </Button>
@@ -414,7 +414,7 @@ export default function HomePage() {
                   <span>Explore Platform &amp; Architecture →</span>
                 </Button>
               </Link>
-              <Link href="/emergency">
+              <Link href="/hospital/emergency">
                 <Button variant="danger" size="lg" className="font-bold">
                   <span>🚨 Emergency Blood Request</span>
                 </Button>

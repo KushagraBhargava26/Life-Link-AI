@@ -6,6 +6,7 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
 import { hospitalService } from '@/services/hospitalService';
 import { Button } from '@/components/ui/Button';
@@ -15,6 +16,7 @@ import { Input } from '@/components/ui/Input';
 import { Modal } from '@/components/ui/Modal';
 
 export default function HospitalRequestsPage() {
+  const router = useRouter();
   const { isAuthenticated } = useAuthStore();
   const [requests, setRequests] = useState<any[]>([]);
   const [total, setTotal] = useState(0);
@@ -76,20 +78,12 @@ export default function HospitalRequestsPage() {
       }
 
       const res = await hospitalService.createEmergencyRequest(payload);
-      setSubmitSuccess(`Emergency Requisition ${res.request_number} dispatched!`);
+      setSubmitSuccess(`Emergency Requisition ${res.request_number} dispatched! Redirecting to Live Dispatch Tracker...`);
       setTimeout(() => {
         setModalOpen(false);
         setSubmitSuccess(null);
-        setReqForm({
-          blood_type: 'O-',
-          units_required: 2,
-          urgency_level: 'CRITICAL',
-          patient_name: '',
-          patient_age: '',
-          notes: '',
-        });
-        loadRequests();
-      }, 1500);
+        router.push(`/emergency/track/${res.request_number}`);
+      }, 1200);
     } catch (err: any) {
       setError(err.response?.data?.error?.message || 'Failed to create emergency request.');
     } finally {
@@ -216,19 +210,20 @@ export default function HospitalRequestsPage() {
                       {r.created_at ? new Date(r.created_at).toLocaleString() : 'Just now'}
                     </td>
                     <td className="px-4 py-3 text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <Link href={`/hospital/requests/${r.id}/matches`}>
-                          <Button variant="primary" size="sm" className="text-xs h-7 px-2">
-                            Find Matches &rarr;
-                          </Button>
-                        </Link>
-                        <Link href={`/emergency/track/${r.request_number}`}>
-                          <Button variant="outline" size="sm" className="text-xs h-7 px-2">
-                            Track
-                          </Button>
-                        </Link>
-                      </div>
-                    </td>
+                        <div className="flex items-center justify-end gap-2">
+                          <Link href={`/emergency/track/${r.request_number}`}>
+                            <Button variant="danger" size="sm" className="text-xs h-7 px-2.5 font-bold shadow-sm flex items-center gap-1">
+                              <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
+                              🚑 Live GPS Track
+                            </Button>
+                          </Link>
+                          <Link href={`/hospital/requests/${r.id}/matches`}>
+                            <Button variant="outline" size="sm" className="text-xs h-7 px-2 font-semibold">
+                              Matches &rarr;
+                            </Button>
+                          </Link>
+                        </div>
+                      </td>
                   </tr>
                 ))}
               </tbody>

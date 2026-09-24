@@ -1,5 +1,5 @@
-# backend/app/main.py
-# LifeLink AI — FastAPI Application Entry Point
+﻿# backend/app/main.py
+# LifeLink AI â€” FastAPI Application Entry Point
 # Architecture Reference: ARCHITECTURE.md Section 16 (Backend Architecture)
 #
 # This file:
@@ -8,7 +8,7 @@
 #   - Attaches global middleware
 #   - Defines health check endpoint
 #
-# Phase 1.1: Scaffolding only — no business logic, no endpoints implemented.
+# Phase 1.1: Scaffolding only â€” no business logic, no endpoints implemented.
 
 from __future__ import annotations
 
@@ -30,13 +30,13 @@ from app.core.middleware import RateLimitMiddleware, RequestLoggingMiddleware
 # ---------------------------------------------------------------------------
 configure_logging()
 
-import structlog  # noqa: E402 — must be after configure_logging()
+import structlog  # noqa: E402 â€” must be after configure_logging()
 
 logger = structlog.get_logger(__name__)
 
 
 # ---------------------------------------------------------------------------
-# Application Lifespan — startup and shutdown events
+# Application Lifespan â€” startup and shutdown events
 # ---------------------------------------------------------------------------
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
@@ -123,7 +123,7 @@ app = FastAPI(
 #   4. JWT Auth (in dependency injection, not middleware layer)
 # ---------------------------------------------------------------------------
 
-# 1. CORS Middleware — must be first
+# 1. CORS Middleware â€” must be first
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.CORS_ALLOWED_ORIGINS_LIST,
@@ -160,6 +160,7 @@ from app.modules.hospital.router import router as hospital_router
 from app.modules.blood_bank.router import router as blood_bank_router
 from app.modules.inventory.router import blood_bank_inventory_router, inventory_router
 from app.modules.emergency.router import router as emergency_router
+from app.modules.emergency.gps_router import gps_router
 from app.modules.matching.router import router as matching_router
 from app.modules.admin.router import router as admin_router
 # from app.modules.notification.router import router as notification_router
@@ -175,6 +176,7 @@ app.include_router(inventory_router, prefix=f"{API_V1_PREFIX}/inventory", tags=[
 app.include_router(emergency_router, prefix=f"{API_V1_PREFIX}/emergency", tags=["Emergency"])
 app.include_router(matching_router, prefix=f"{API_V1_PREFIX}/emergency", tags=["Matching & Coordination"])
 app.include_router(matching_router, prefix=f"{API_V1_PREFIX}/matching", tags=["Matching & Coordination"])
+app.include_router(gps_router, prefix=f"{API_V1_PREFIX}/emergency", tags=["GPS Telemetry"])
 app.include_router(matching_router, prefix=f"{API_V1_PREFIX}/hospitals/me", tags=["Matching & Coordination"])
 app.include_router(admin_router, prefix=f"{API_V1_PREFIX}/admin", tags=["Admin"])
 # app.include_router(notification_router, prefix=f"{API_V1_PREFIX}/notifications", tags=["Notifications"])
@@ -200,7 +202,7 @@ async def health_check() -> JSONResponse:
     Returns the current health status of the backend service.
     Used by Docker Compose, load balancers, and monitoring systems.
 
-    This endpoint is intentionally lightweight — it does not check
+    This endpoint is intentionally lightweight â€” it does not check
     database or Redis connectivity. Use /health/detailed for deep checks.
     """
     return JSONResponse(
@@ -227,7 +229,7 @@ async def health_check() -> JSONResponse:
     include_in_schema=False,  # Don't show in Swagger docs
 )
 async def root() -> JSONResponse:
-    """API root — redirects users to the documentation."""
+    """API root â€” redirects users to the documentation."""
     return JSONResponse(
         status_code=200,
         content={
@@ -242,3 +244,5 @@ async def root() -> JSONResponse:
             "message": "Welcome to LifeLink AI API. See /docs for full documentation.",
         },
     )
+
+

@@ -113,7 +113,6 @@ function EmergencyIntakeContent() {
             Zero-barrier submission for attending physicians, trauma teams, and family members. No account required.
           </p>
         </div>
-
         {/* Existing Request Lookup Bar */}
         <Card className="mb-8 border-border bg-card-elevated shadow-sm">
           <CardContent className="p-4">

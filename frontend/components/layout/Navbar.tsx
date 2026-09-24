@@ -90,6 +90,13 @@ export function Navbar() {
             >
               About
             </Link>
+            <Link
+              href="/emergency"
+              className="flex items-center gap-1.5 font-bold text-xs px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white shadow-sm transition-all"
+            >
+              <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
+              <span>Hospital Emergency</span>
+            </Link>
 
             {/* Authenticated Role-Specific Links */}
             {mounted && isAuthenticated && (
@@ -123,7 +130,16 @@ export function Navbar() {
                         pathname === '/hospital' ? 'text-primary font-semibold' : 'text-muted-foreground'
                       }`}
                     >
-                      Hospital Dashboard
+                      Hospital Console
+                    </Link>
+                    <Link
+                      href="/hospital/emergency"
+                      className={`transition-colors hover:text-foreground flex items-center gap-1 font-bold ${
+                        isActive('/hospital/emergency') ? 'text-primary' : 'text-red-600 dark:text-red-400'
+                      }`}
+                    >
+                      <span>🚨</span>
+                      <span>Emergency Desk</span>
                     </Link>
                     <Link
                       href="/hospital/requests"
@@ -260,6 +276,14 @@ export function Navbar() {
               className="p-2 rounded-lg hover:bg-muted text-foreground transition-colors"
             >
               About
+            </Link>
+            <Link
+              href="/emergency"
+              onClick={() => setMobileMenuOpen(false)}
+              className="p-2 rounded-lg bg-red-600 hover:bg-red-700 text-white font-bold text-sm flex items-center gap-2"
+            >
+              <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
+              <span>Hospital Emergency</span>
             </Link>
 
             {mounted && isAuthenticated ? (

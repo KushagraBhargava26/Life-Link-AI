@@ -91,20 +91,12 @@ export default function HospitalDashboardPage() {
       }
 
       const res = await hospitalService.createEmergencyRequest(payload);
-      setSubmitSuccess(`Emergency Requisition ${res.request_number} recorded successfully!`);
+      setSubmitSuccess(`Emergency Requisition ${res.request_number} created! Redirecting to Live Dispatch Tracker...`);
       setTimeout(() => {
         setModalOpen(false);
         setSubmitSuccess(null);
-        setReqForm({
-          blood_type: 'O-',
-          units_required: 2,
-          urgency_level: 'CRITICAL',
-          patient_name: '',
-          patient_age: '',
-          notes: '',
-        });
-        loadData();
-      }, 1500);
+        router.push(`/emergency/track/${res.request_number}`);
+      }, 1200);
     } catch (err: any) {
       setError(err.response?.data?.error?.message || 'Failed to create emergency requisition.');
     } finally {
@@ -318,14 +310,15 @@ export default function HospitalDashboardPage() {
                       </td>
                       <td className="px-4 py-3 text-right">
                         <div className="flex items-center justify-end gap-2">
-                          <Link href={`/hospital/requests/${r.id}/matches`}>
-                            <Button variant="primary" size="sm" className="text-xs h-7 px-2 font-bold">
-                              Find Matches &rarr;
+                          <Link href={`/emergency/track/${r.request_number}`}>
+                            <Button variant="danger" size="sm" className="text-xs h-7 px-2.5 font-bold shadow-sm flex items-center gap-1">
+                              <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
+                              🚑 Live GPS Track
                             </Button>
                           </Link>
-                          <Link href={`/emergency/track/${r.request_number}`}>
-                            <Button variant="outline" size="sm" className="text-xs h-7 px-2">
-                              Track
+                          <Link href={`/hospital/requests/${r.id}/matches`}>
+                            <Button variant="outline" size="sm" className="text-xs h-7 px-2 font-semibold">
+                              Matches &rarr;
                             </Button>
                           </Link>
                         </div>
