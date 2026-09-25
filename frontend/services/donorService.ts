@@ -106,6 +106,11 @@ export const donorService = {
     );
     return response.data;
   },
+
+  async deleteDonorAccount(): Promise<ApiSuccessResponse<any>> {
+    const response = await api.delete<ApiSuccessResponse<any>>('/donors/me');
+    return response.data;
+  },
 };
 
 export default donorService;

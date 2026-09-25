@@ -53,4 +53,9 @@ export const hospitalService = {
     const res = await apiClient.get<{ success: boolean; data: { items: Hospital[]; total: number } }>('/hospitals', { params });
     return res.data.data;
   },
+
+  async deleteHospitalAccount(): Promise<any> {
+    const res = await apiClient.delete<{ success: boolean; data: any }>('/hospitals/me');
+    return res.data;
+  },
 };

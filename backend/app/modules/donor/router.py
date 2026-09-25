@@ -167,4 +167,16 @@ async def respond_to_my_opportunity(
     )
     return _format_success(data=resp, message=f"Emergency response registered: {payload.status}")
 
-
+@router.delete(
+    "/me",
+    response_model=dict[str, Any],
+    status_code=status.HTTP_200_OK,
+    summary="Permanently delete donor account and all associated data",
+)
+async def delete_my_donor_account(
+    current_user: User = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db),
+) -> dict[str, Any]:
+    service = DonorService(db)
+    await service.delete_account(current_user.id)
+    return {"success": True, "message": "Donor account permanently deleted."}

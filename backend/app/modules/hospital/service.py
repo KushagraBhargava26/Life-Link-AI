@@ -235,3 +235,25 @@ class HospitalService:
             user_id=str(user_id),
         )
         return created
+
+    async def delete_account(self, user_id: uuid.UUID) -> None:
+        from app.modules.auth.models import User as UserModel
+        import datetime
+        from sqlalchemy import select
+        
+        hospital = await self.get_my_hospital(user_id)
+        
+        # Soft delete hospital
+        now = datetime.datetime.now(datetime.timezone.utc)
+        hospital.deleted_at = now
+        await self.repository.update(hospital)
+        
+        # Soft delete user
+        user_stmt = select(UserModel).where(UserModel.id == user_id)
+        user = (await self.db.execute(user_stmt)).scalar_one_or_none()
+        if user:
+            user.deleted_at = now
+            user.is_active = False
+            
+        await self.db.commit()
+        logger.info("hospital_account_deleted", user_id=str(user_id))

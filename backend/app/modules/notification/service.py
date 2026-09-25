@@ -15,4 +15,40 @@ import structlog
 
 logger = structlog.get_logger(__name__)
 
-# Phase 1.2+: Implement NotificationService class here
+import uuid
+from sqlalchemy.ext.asyncio import AsyncSession
+
+class NotificationService:
+    def __init__(self, db: AsyncSession):
+        self.db = db
+
+    async def notify_hospital_donor_accepted(
+        self,
+        emergency_request_id: uuid.UUID,
+        donor_name: str,
+        donor_blood_type: str,
+        request_number: str,
+        hospital_admin_email: str,
+    ) -> None:
+        """Fires when a donor accepts an emergency request. Logs in-app + prints email simulation."""
+        logger.info(
+            "NOTIFICATION: donor_accepted_emergency",
+            to=hospital_admin_email,
+            subject=f"[LifeLink] Donor Accepted: {request_number}",
+            donor=donor_name,
+            blood_type=donor_blood_type,
+            request=request_number,
+        )
+        # TODO: Integrate SendGrid/Twilio for real email/SMS
+        # For now this is logged and visible in docker logs lifelink-backend
+
+    async def notify_donor_request_fulfilled(
+        self,
+        donor_email: str,
+        request_number: str,
+    ) -> None:
+        logger.info(
+            "NOTIFICATION: request_fulfilled",
+            to=donor_email,
+            message=f"Emergency {request_number} has been fulfilled. Thank you for your contribution!",
+        )

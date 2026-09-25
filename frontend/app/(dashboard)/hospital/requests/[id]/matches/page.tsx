@@ -106,6 +106,12 @@ export default function HospitalMatchingWorkspacePage() {
   useEffect(() => {
     fetchRequestDetails();
     fetchMatches(searchRadius);
+    
+    // Auto-poll matches every 15 seconds
+    const interval = setInterval(() => {
+      fetchMatches(searchRadius);
+    }, 15000);
+    return () => clearInterval(interval);
   }, [fetchRequestDetails, fetchMatches, searchRadius]);
 
   if (isLoadingRequest) {
@@ -119,6 +125,7 @@ export default function HospitalMatchingWorkspacePage() {
 
   const bloodBanks = matchRun?.blood_banks || [];
   const donors = matchRun?.donors || [];
+  const acceptedDonors = donors.filter(d => d.donor_response_status === 'ACCEPTED');
   const totalCandidates = bloodBanks.length + donors.length;
 
   return (
@@ -161,6 +168,15 @@ export default function HospitalMatchingWorkspacePage() {
         <div className="p-4 bg-success/10 border border-success/30 rounded-xl text-success text-sm flex items-center justify-between">
           <span>✓ {actionMessage}</span>
           <button onClick={() => setActionMessage(null)} className="font-bold text-lg leading-none">×</button>
+        </div>
+      )}
+
+      {/* Accepted Donors Real-time Banner */}
+      {acceptedDonors.length > 0 && (
+        <div className="p-4 bg-success-subtle border border-success text-success-foreground font-bold rounded-xl text-sm space-y-1">
+          {acceptedDonors.map(d => (
+            <div key={d.id}>✅ {d.name} has accepted this request. Please shortlist them to proceed.</div>
+          ))}
         </div>
       )}
 

@@ -112,9 +112,9 @@ export function Navbar() {
                       <span>Donor Dashboard</span>
                     </Link>
                     <Link
-                      href="/dashboard"
+                      href="/donor/profile"
                       className={`transition-colors hover:text-foreground ${
-                        pathname === '/dashboard' ? 'text-primary font-semibold' : 'text-muted-foreground'
+                        pathname === '/donor/profile' ? 'text-primary font-semibold' : 'text-muted-foreground'
                       }`}
                     >
                       Profile
@@ -299,7 +299,7 @@ export function Navbar() {
                         🩸 Donor Dashboard
                       </Button>
                     </Link>
-                    <Link href="/dashboard" onClick={() => setMobileMenuOpen(false)}>
+                    <Link href="/donor/profile" onClick={() => setMobileMenuOpen(false)}>
                       <Button variant="ghost" size="md" className="w-full justify-start text-xs">
                         👤 Donor Profile
                       </Button>

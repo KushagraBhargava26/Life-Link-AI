@@ -246,3 +246,17 @@ async def get_blood_bank_by_id(
         "success": True,
         "data": BloodBankResponseSchema.model_validate(bank).model_dump(),
     }
+
+@router.delete(
+    "/me",
+    response_model=dict[str, Any],
+    status_code=status.HTTP_200_OK,
+    summary="Soft-delete blood bank account",
+)
+async def delete_my_blood_bank_account(
+    current_user: User = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db),
+) -> dict[str, Any]:
+    service = BloodBankService(db)
+    await service.delete_account(current_user.id)
+    return {"success": True, "message": "Blood bank account deleted."}

@@ -225,3 +225,17 @@ async def get_hospital_by_id(
         "success": True,
         "data": HospitalResponseSchema.model_validate(hospital).model_dump(),
     }
+
+@router.delete(
+    "/me",
+    response_model=dict[str, Any],
+    status_code=status.HTTP_200_OK,
+    summary="Soft-delete hospital account",
+)
+async def delete_my_hospital_account(
+    current_user: User = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db),
+) -> dict[str, Any]:
+    service = HospitalService(db)
+    await service.delete_account(current_user.id)
+    return {"success": True, "message": "Hospital account deleted."}

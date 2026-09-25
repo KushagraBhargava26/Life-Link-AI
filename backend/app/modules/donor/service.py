@@ -117,10 +117,11 @@ class DonorService:
             donor.is_available = data.is_available
         if data.last_donation_date is not None:
             donor.last_donation_date = data.last_donation_date
-            # Check 56-day cooldown
+            # Check gender-specific cooldown
+            cooldown_period = 112 if donor.gender and donor.gender.upper() == 'FEMALE' else 84
             today = datetime.date.today()
             cooldown_days = (today - data.last_donation_date).days
-            donor.is_eligible = cooldown_days >= 56
+            donor.is_eligible = cooldown_days >= cooldown_period
 
         await self.repository.update(donor)
         await self.db.commit()
@@ -170,7 +171,8 @@ class DonorService:
         days_until_eligible = 0
 
         if donor.last_donation_date:
-            next_eligible_date = donor.last_donation_date + datetime.timedelta(days=56)
+            cooldown_period = 112 if donor.gender and donor.gender.upper() == 'FEMALE' else 84
+            next_eligible_date = donor.last_donation_date + datetime.timedelta(days=cooldown_period)
             if next_eligible_date > today:
                 days_until_eligible = (next_eligible_date - today).days
             else:
@@ -338,12 +340,13 @@ class DonorService:
         if status == "ACCEPTED":
             # Medical cooldown validation
             if donor.last_donation_date:
+                cooldown_period = 112 if donor.gender and donor.gender.upper() == 'FEMALE' else 84
                 today = datetime.date.today()
                 days_since = (today - donor.last_donation_date).days
-                if days_since < 56:
-                    days_left = 56 - days_since
+                if days_since < cooldown_period:
+                    days_left = cooldown_period - days_since
                     raise ValidationError(
-                        f"Donor is currently in a 56-day cooldown period ({days_left} days remaining) and ineligible to donate."
+                        f"Donor is currently in a {cooldown_period}-day cooldown period ({days_left} days remaining) and ineligible to donate."
                     )
 
             # Compatibility validation
@@ -375,29 +378,84 @@ class DonorService:
                 donor_id=str(donor.id),
                 status=status,
             )
-            return DonorOpportunityResponseSchema.model_validate(existing_resp).model_dump(
-                mode="json"
+            result_resp = existing_resp
+        else:
+            new_resp = DonorEmergencyResponse(
+                id=uuid.uuid4(),
+                emergency_request_id=req.id,
+                donor_id=donor.id,
+                status=status,
+                notes=notes,
+                responded_at=now,
             )
+            self.db.add(new_resp)
+            await self.db.commit()
+            await self.db.refresh(new_resp)
+            logger.info(
+                "donor_response_created",
+                request_id=str(req.id),
+                donor_id=str(donor.id),
+                status=status,
+            )
+            result_resp = new_resp
 
-        new_resp = DonorEmergencyResponse(
-            id=uuid.uuid4(),
-            emergency_request_id=req.id,
-            donor_id=donor.id,
-            status=status,
-            notes=notes,
-            responded_at=now,
-        )
-        self.db.add(new_resp)
-        await self.db.commit()
-        await self.db.refresh(new_resp)
-        logger.info(
-            "donor_response_created",
-            request_id=str(req.id),
-            donor_id=str(donor.id),
-            status=status,
-        )
-        return DonorOpportunityResponseSchema.model_validate(new_resp).model_dump(
+        # Fire notification hook
+        if status == "ACCEPTED":
+            try:
+                from app.modules.notification.service import NotificationService
+                from app.modules.hospital.models import Hospital
+                from app.modules.auth.models import User as UserModel
+                
+                notif = NotificationService(self.db)
+                if req.hospital_id:
+                    hosp_stmt = select(Hospital).where(Hospital.id == req.hospital_id)
+                    hosp = (await self.db.execute(hosp_stmt)).scalar_one_or_none()
+                    if hosp and hosp.admin_user_id:
+                        user_stmt = select(UserModel).where(UserModel.id == hosp.admin_user_id)
+                        admin_user = (await self.db.execute(user_stmt)).scalar_one_or_none()
+                        
+                        donor_user_stmt = select(UserModel).where(UserModel.id == donor.user_id)
+                        donor_user = (await self.db.execute(donor_user_stmt)).scalar_one_or_none()
+                        donor_name = f"{donor_user.first_name} {donor_user.last_name}" if donor_user else "Donor"
+                        
+                        if admin_user:
+                            await notif.notify_hospital_donor_accepted(
+                                emergency_request_id=req.id,
+                                donor_name=donor_name,
+                                donor_blood_type=donor.blood_type,
+                                request_number=req.request_number,
+                                hospital_admin_email=admin_user.email,
+                            )
+            except Exception as e:
+                logger.warning("notification_hook_failed", error=str(e))
+
+        return DonorOpportunityResponseSchema.model_validate(result_resp).model_dump(
             mode="json"
         )
 
 
+    async def delete_account(self, user_id: uuid.UUID) -> None:
+        from app.modules.auth.models import User as UserModel
+        from app.modules.donor.models import DonorEmergencyResponse
+        from sqlalchemy import delete
+        
+        donor = await self.get_profile(user_id)
+        
+        # Hard delete emergency responses
+        resp_stmt = delete(DonorEmergencyResponse).where(DonorEmergencyResponse.donor_id == donor.id)
+        await self.db.execute(resp_stmt)
+        
+        # Soft delete donor profile
+        now = datetime.datetime.now(datetime.timezone.utc)
+        donor.deleted_at = now
+        await self.repository.update(donor)
+        
+        # Soft delete user
+        user_stmt = select(UserModel).where(UserModel.id == user_id)
+        user = (await self.db.execute(user_stmt)).scalar_one_or_none()
+        if user:
+            user.deleted_at = now
+            user.is_active = False
+            
+        await self.db.commit()
+        logger.info("donor_account_deleted", user_id=str(user_id))

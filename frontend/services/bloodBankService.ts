@@ -87,4 +87,9 @@ export const bloodBankService = {
     );
     return res.data.data;
   },
+
+  async deleteBloodBankAccount(): Promise<any> {
+    const res = await apiClient.delete<{ success: boolean; data: any }>('/blood-banks/me');
+    return res.data;
+  },
 };

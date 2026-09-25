@@ -375,6 +375,37 @@ export default function HospitalProfilePage() {
           </Button>
         </div>
       </form>
+
+      {isExisting && (
+        <Card className="border-critical/30 mt-8">
+          <CardHeader>
+            <CardTitle className="text-critical">Danger Zone</CardTitle>
+            <CardDescription>Permanently delete your hospital facility account and all associated data.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button
+              variant="danger"
+              onClick={async () => {
+                if (window.confirm("Type OK to delete hospital account") || true) {
+                  const val = window.prompt("Type DELETE to confirm");
+                  if (val === 'DELETE') {
+                    try {
+                      await hospitalService.deleteHospitalAccount();
+                      localStorage.removeItem('lifelink_token');
+                      useAuthStore.getState().clearAuth();
+                      router.push('/login');
+                    } catch (e) {
+                      alert("Failed to delete account");
+                    }
+                  }
+                }
+              }}
+            >
+              Delete Hospital Account
+            </Button>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

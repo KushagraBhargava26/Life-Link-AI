@@ -178,3 +178,25 @@ class BloodBankService:
             for r in demand_requests
         ]
         return items, total
+
+    async def delete_account(self, user_id: uuid.UUID) -> None:
+        from app.modules.auth.models import User as UserModel
+        import datetime
+        from sqlalchemy import select
+        
+        bank = await self.get_my_blood_bank(user_id)
+        
+        # Soft delete blood bank
+        now = datetime.datetime.now(datetime.timezone.utc)
+        bank.deleted_at = now
+        await self.repository.update(bank)
+        
+        # Soft delete user
+        user_stmt = select(UserModel).where(UserModel.id == user_id)
+        user = (await self.db.execute(user_stmt)).scalar_one_or_none()
+        if user:
+            user.deleted_at = now
+            user.is_active = False
+            
+        await self.db.commit()
+        logger.info("blood_bank_account_deleted", user_id=str(user_id))
