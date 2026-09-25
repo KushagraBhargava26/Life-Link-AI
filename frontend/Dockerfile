@@ -17,8 +17,8 @@ RUN apk add --no-cache libc6-compat
 # Copy package files
 COPY package.json package-lock.json ./
 
-# Install dependencies
-RUN npm ci
+# Install dependencies using clean reproducible lockfile
+RUN npm ci --no-audit --no-fund
 
 # =============================================================================
 # Stage 2: Builder

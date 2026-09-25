@@ -100,10 +100,15 @@ echo.
 set "COMPOSE_HTTP_TIMEOUT=300"
 set "DOCKER_CLIENT_TIMEOUT=300"
 
-docker compose build --no-cache
+docker compose build
 if %ERRORLEVEL% neq 0 (
-    set "ERR_REASON=Docker image rebuild failed. Check the error above for details."
-    goto :error
+    echo.
+    echo [WARN] First build attempt had issues. Retrying build...
+    docker compose build
+    if !ERRORLEVEL! neq 0 (
+        set "ERR_REASON=Docker image rebuild failed. Check the error above for details."
+        goto :error
+    )
 )
 echo.
 echo [OK] All Docker images rebuilt successfully.
