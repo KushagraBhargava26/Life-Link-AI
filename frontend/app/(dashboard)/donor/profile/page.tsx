@@ -135,7 +135,7 @@ export default function DonorProfilePage() {
     );
   }
 
-  const genderCooldownDays = gender === 'FEMALE' ? 84 : 56;
+  const genderCooldownDays = gender === 'FEMALE' ? 112 : 84;
 
   return (
     <div className="space-y-8 animate-fade-in max-w-4xl mx-auto">

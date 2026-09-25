@@ -24,6 +24,11 @@ export default function BloodBankProfilePage() {
   const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
+  // Deletion states
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [isDeleting, setIsDeleting] = useState(false);
+
   const [formData, setFormData] = useState<BloodBankCreateData>({
     name: '',
     license_number: '',
@@ -362,29 +367,57 @@ export default function BloodBankProfilePage() {
         <Card className="border-critical/30 mt-8">
           <CardHeader>
             <CardTitle className="text-critical">Danger Zone</CardTitle>
-            <CardDescription>Permanently delete your blood bank facility account and all associated data.</CardDescription>
+            <CardDescription>Permanently delete your blood bank facility account and all associated inventory records.</CardDescription>
           </CardHeader>
           <CardContent>
-            <Button
-              variant="danger"
-              onClick={async () => {
-                if (window.confirm("Type OK to delete blood bank account") || true) {
-                  const val = window.prompt("Type DELETE to confirm");
-                  if (val === 'DELETE') {
-                    try {
-                      await bloodBankService.deleteBloodBankAccount();
-                      localStorage.removeItem('lifelink_token');
-                      useAuthStore.getState().clearAuth();
-                      router.push('/login');
-                    } catch (e) {
-                      alert("Failed to delete account");
-                    }
-                  }
-                }
-              }}
-            >
-              Delete Blood Bank Account
-            </Button>
+            {!showDeleteConfirm ? (
+              <Button variant="danger" onClick={() => setShowDeleteConfirm(true)}>
+                Delete Blood Bank Account
+              </Button>
+            ) : (
+              <div className="space-y-4 max-w-md p-4 bg-critical/5 rounded-lg border border-critical/20">
+                <p className="text-sm font-semibold text-critical">
+                  Warning: This action will permanently deactivate your blood bank facility. Type DELETE to confirm.
+                </p>
+                <Input
+                  value={deleteConfirmText}
+                  onChange={(e) => setDeleteConfirmText(e.target.value)}
+                  placeholder="DELETE"
+                />
+                <div className="flex gap-2">
+                  <Button
+                    variant="danger"
+                    disabled={deleteConfirmText !== 'DELETE'}
+                    isLoading={isDeleting}
+                    onClick={async () => {
+                      if (deleteConfirmText !== 'DELETE') return;
+                      setIsDeleting(true);
+                      try {
+                        await bloodBankService.deleteBloodBankAccount();
+                        localStorage.removeItem('lifelink_token');
+                        useAuthStore.getState().clearAuth();
+                        router.push('/login');
+                      } catch (e: any) {
+                        setMessage({ type: 'error', text: e?.response?.data?.error?.message || 'Failed to delete blood bank account.' });
+                        setIsDeleting(false);
+                        setShowDeleteConfirm(false);
+                      }
+                    }}
+                  >
+                    Confirm Deletion
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setShowDeleteConfirm(false);
+                      setDeleteConfirmText('');
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
       )}

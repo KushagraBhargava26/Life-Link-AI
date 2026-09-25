@@ -237,7 +237,7 @@ echo  +-----------------------+-----------------------------+------------------+
 echo  ^| Super Admin           ^| admin@lifelink.ai           ^| Admin@12345      ^|
 echo  ^| Hospital Admin        ^| hospital.admin@apollo.org   ^| Hospital@12345   ^|
 echo  ^| Blood Bank Manager    ^| bloodbank.manager@redcross.org ^| BloodBank@12345^|
-echo  ^| Donor (Rahul Sharma)  ^| donor.rahul@example.com     ^| Donor@12345      ^|
+echo  ^| Donor (Priya Verma)   ^| priya.verma@gmail.com       ^| Priya@12345      ^|
 echo  +-----------------------+-----------------------------+------------------+
 echo.
 echo Opening browser...
