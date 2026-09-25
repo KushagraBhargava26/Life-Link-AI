@@ -120,9 +120,21 @@ echo All Docker container health checks passed!
 
 :: Step 5 — Verify that the actual public frontend is reachable
 echo Verifying frontend HTTP availability at http://localhost...
-powershell -NoProfile -ExecutionPolicy Bypass -Command "$ok = $false; for ($i = 0; $i -lt 15; $i++) { try { $resp = Invoke-WebRequest -Uri 'http://localhost' -UseBasicParsing -TimeoutSec 2; if ($resp.StatusCode -eq 200) { $ok = $true; break } } catch {} Start-Sleep 1 }; if ($ok) { exit 0 } else { exit 1 }"
+set "HTTP_OK=0"
+for /L %%I in (1,1,15) do (
+    if "!HTTP_OK!"=="0" (
+        for /f %%C in ('curl.exe -s -o NUL -w "%%{http_code}" http://localhost 2^>nul') do (
+            if "%%C"=="200" (
+                set "HTTP_OK=1"
+            )
+        )
+        if "!HTTP_OK!"=="0" (
+            powershell -NoProfile -Command "Start-Sleep 1" >nul 2>&1
+        )
+    )
+)
 
-if %ERRORLEVEL% neq 0 (
+if "!HTTP_OK!"=="0" (
     set "ERR_REASON=Frontend is not reachable at http://localhost via Nginx proxy."
     goto :error
 )
