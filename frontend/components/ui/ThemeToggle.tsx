@@ -17,7 +17,7 @@ export function ThemeToggle({ className = '' }: { className?: string }) {
 
   if (!mounted) {
     return (
-      <div className={`h-9 w-9 rounded-lg border border-border bg-card/60 ${className}`} aria-hidden="true" />
+      <div className={`h-11 w-11 rounded-lg border border-border bg-card/60 ${className}`} aria-hidden="true" />
     );
   }
 
@@ -27,7 +27,7 @@ export function ThemeToggle({ className = '' }: { className?: string }) {
     <button
       type="button"
       onClick={toggleTheme}
-      className={`relative inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-card/80 text-foreground transition-all hover:bg-muted hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${className}`}
+      className={`relative inline-flex h-11 w-11 items-center justify-center rounded-lg border border-border bg-card/80 text-foreground transition-all hover:bg-muted hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${className}`}
       aria-label={isDark ? 'Switch to light theme' : 'Switch to dark theme'}
       title={isDark ? 'Switch to light theme' : 'Switch to dark theme'}
     >

@@ -104,7 +104,7 @@ export default function AboutPage() {
             <div className="text-center space-y-3 max-w-2xl mx-auto">
               <Badge variant="outline" className="text-xs uppercase tracking-wider font-bold">Operational Pipeline</Badge>
               <h2 className="text-3xl font-black text-foreground tracking-tight">
-                How LifeLink AI Coordinates in Real Time
+                How LifeLink AI Supports Emergency Coordination
               </h2>
               <p className="text-sm text-muted-foreground">
                 A standardized three-stage lifecycle ensuring clinical rigor and zero ambiguity.
@@ -168,7 +168,7 @@ export default function AboutPage() {
                 </CardHeader>
                 <CardContent className="text-xs text-muted-foreground space-y-2">
                   <p>
-                    Targeted emergency alerts are dispatched to chosen blood banks or donors. Requisition status progresses in real-time until units are verified and received.
+                    Emergency requests can be matched with blood bank inventory and eligible donors. Request status is shown from the latest information available to the service.
                   </p>
                   <p className="font-medium text-foreground">
                     Donor cooldown (56 days) is automatically logged to protect donor health.
@@ -199,7 +199,7 @@ export default function AboutPage() {
                   <h3 className="font-bold text-base text-foreground">Hospitals &amp; Trauma Desks</h3>
                 </div>
                 <p className="text-xs text-muted-foreground leading-relaxed">
-                  Create emergency requisitions, view facility operational verification status, trigger multi-source matching runs, and monitor candidate response in real-time.
+                  Create emergency requests, view facility verification status, and use the available matching and candidate response workflows.
                 </p>
                 <div className="pt-2">
                   <Link href="/hospital">
@@ -216,7 +216,7 @@ export default function AboutPage() {
                   <h3 className="font-bold text-base text-foreground">Licensed Blood Banks</h3>
                 </div>
                 <p className="text-xs text-muted-foreground leading-relaxed">
-                  Manage real-time inventory across all 8 blood groups and components, track bag collection and expiration dates, and monitor regional emergency demand feeds.
+                  Manage inventory across blood groups and components, review expiry dates, and check emergency demand.
                 </p>
                 <div className="pt-2">
                   <Link href="/blood-bank">

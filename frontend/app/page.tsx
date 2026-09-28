@@ -74,7 +74,7 @@ export default function HomePage() {
   const handleTrack = (e: React.FormEvent) => {
     e.preventDefault();
     if (trackingId.trim()) {
-      router.push(`/hospital/emergency/track/${encodeURIComponent(trackingId.trim())}`);
+      router.push(`/emergency/track/${encodeURIComponent(trackingId.trim())}`);
     }
   };
 
@@ -90,17 +90,17 @@ export default function HomePage() {
               <span className="flex h-2 w-2 rounded-full bg-critical animate-pulse" aria-hidden="true" />
               <strong className="font-semibold text-critical">Emergency Coordination Protocol:</strong>
               <span className="text-muted-foreground hidden sm:inline">
-                Real-time deterministic matching active for trauma centers and blood banks.
+                Dedicated workflows for hospitals, blood banks and donors.
               </span>
               <span className="text-muted-foreground sm:hidden">
-                Emergency blood coordination active.
+                Coordination support for care teams.
               </span>
             </div>
             <Link
-              href="/hospital/emergency"
+              href="/emergency"
               className="font-semibold text-critical hover:underline underline-offset-2 flex items-center gap-1 shrink-0"
             >
-              <span>Emergency Intake Desk</span>
+              <span>Emergency intake</span>
               <span aria-hidden="true">→</span>
             </Link>
           </div>
@@ -161,15 +161,15 @@ export default function HomePage() {
                 <div className="pt-4 grid grid-cols-1 sm:grid-cols-3 gap-3 text-left">
                   <div className="p-3 rounded-lg bg-card border border-border">
                     <div className="text-xs font-bold text-foreground">Emergency Requests</div>
-                    <div className="text-[11px] text-muted-foreground mt-0.5">Rapid trauma intake with live tracking</div>
+                    <div className="text-[11px] text-muted-foreground mt-0.5">Emergency intake and request status</div>
                   </div>
                   <div className="p-3 rounded-lg bg-card border border-border">
                     <div className="text-xs font-bold text-foreground">Compatible Blood</div>
                     <div className="text-[11px] text-muted-foreground mt-0.5">Deterministic ABO/Rh standard</div>
                   </div>
                   <div className="p-3 rounded-lg bg-card border border-border">
-                    <div className="text-xs font-bold text-foreground">Faster Coordination</div>
-                    <div className="text-[11px] text-muted-foreground mt-0.5">Direct connection to banks &amp; donors</div>
+                    <div className="text-xs font-bold text-foreground">Coordinated Workflows</div>
+                    <div className="text-[11px] text-muted-foreground mt-0.5">Shared tools for facilities and donors</div>
                   </div>
                 </div>
               </div>
@@ -185,7 +185,7 @@ export default function HomePage() {
                           Emergency Blood Desk
                         </span>
                       </div>
-                      <Badge variant="critical">24/7 Intake</Badge>
+                      <Badge variant="critical">Public intake</Badge>
                     </div>
                   </CardHeader>
 
@@ -193,11 +193,11 @@ export default function HomePage() {
                     <div className="space-y-2">
                       <h3 className="text-sm font-bold text-foreground">Immediate Emergency Requisition</h3>
                       <p className="text-muted-foreground">
-                        Need blood urgently for a patient or surgical emergency? Verified hospital clinical teams can issue emergency transport requisitions.
+                        Submit an emergency blood request for coordination through the account-free intake workflow.
                       </p>
-                      <Link href="/hospital/emergency" className="block pt-1">
+                      <Link href="/emergency" className="block pt-1">
                         <Button variant="danger" size="md" className="w-full font-bold shadow-sm">
-                          <span>🚨 Hospital Emergency Desk</span>
+                          <span>🚨 Start an emergency request</span>
                         </Button>
                       </Link>
                     </div>
@@ -205,9 +205,9 @@ export default function HomePage() {
                     <div className="border-t border-border/60 pt-4 space-y-3">
                       <h3 className="text-sm font-bold text-foreground">Track Existing Requisition</h3>
                       <p className="text-muted-foreground">
-                        Enter your emergency tracking code (e.g. EMR-2026-XXXX) to view live fulfillment status.
+                        Enter your request code to review its current status.
                       </p>
-                      <form onSubmit={handleTrack} className="flex gap-2">
+                      <form onSubmit={handleTrack} className="flex flex-col gap-2 sm:flex-row">
                         <Input
                           type="text"
                           placeholder="Enter Tracking Code..."
@@ -215,7 +215,7 @@ export default function HomePage() {
                           onChange={(e) => setTrackingId(e.target.value)}
                           className="text-xs font-mono"
                         />
-                        <Button type="submit" variant="secondary" size="md" className="shrink-0 font-semibold">
+                        <Button type="submit" variant="secondary" size="md" className="w-full shrink-0 font-semibold sm:w-auto">
                           Track
                         </Button>
                       </form>
@@ -287,7 +287,7 @@ export default function HomePage() {
                       </p>
                     </div>
                   </div>
-                  <Link href={`/hospital/emergency?blood_type=${encodeURIComponent(selectedBlood)}`}>
+                  <Link href={`/emergency?blood_type=${encodeURIComponent(selectedBlood)}`}>
                     <Button variant="outline" size="sm" className="font-semibold text-xs">
                       <span>🚨 Request Type {selectedBlood}</span>
                     </Button>
@@ -364,7 +364,7 @@ export default function HomePage() {
                     <h3 className="font-bold text-base text-foreground">Licensed Blood Banks</h3>
                   </div>
                   <p className="text-xs text-muted-foreground leading-relaxed">
-                    Manage real-time inventory across blood groups and components, track collection and expiration dates, and monitor regional emergency demand feeds.
+                    Manage blood-group and component inventory, track expiry, and review incoming requests.
                   </p>
                 </div>
                 <div className="pt-2">
@@ -414,7 +414,7 @@ export default function HomePage() {
                   <span>Explore Platform &amp; Architecture →</span>
                 </Button>
               </Link>
-              <Link href="/hospital/emergency">
+              <Link href="/emergency">
                 <Button variant="danger" size="lg" className="font-bold">
                   <span>🚨 Emergency Blood Request</span>
                 </Button>

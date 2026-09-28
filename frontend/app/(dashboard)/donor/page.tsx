@@ -24,14 +24,16 @@ export default function DonorDashboardPage() {
   const [showEditProfile, setShowEditProfile] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [loadFailed, setLoadFailed] = useState(false);
 
   // Form fields
-  const [bloodType, setBloodType] = useState('O+');
+  const [bloodType, setBloodType] = useState('');
   const [city, setCity] = useState('');
   const [state, setState] = useState('');
   const [pincode, setPincode] = useState('');
-  const [weightKg, setWeightKg] = useState('65');
-  const [gender, setGender] = useState('MALE');
+  const [weightKg, setWeightKg] = useState('');
+  const [gender, setGender] = useState('');
+  const [isAvailable, setIsAvailable] = useState(false);
 
   useEffect(() => {
     fetchDashboard();
@@ -40,12 +42,14 @@ export default function DonorDashboardPage() {
   const fetchDashboard = async () => {
     setLoading(true);
     setErrorMessage(null);
+    setLoadFailed(false);
     try {
       const resp = await donorService.getDashboard();
       if (resp.success && resp.data) {
         setDashboardData(resp.data);
         if (resp.data.profile) {
           setProfile(resp.data.profile);
+          setIsAvailable(resp.data.profile.is_available);
           setBloodType(resp.data.profile.blood_type);
           setCity(resp.data.profile.city);
           if (resp.data.profile.state) setState(resp.data.profile.state);
@@ -53,8 +57,12 @@ export default function DonorDashboardPage() {
           if (resp.data.profile.weight_kg) setWeightKg(String(resp.data.profile.weight_kg));
           if (resp.data.profile.gender) setGender(resp.data.profile.gender);
         }
+      } else {
+        setLoadFailed(true);
+        setErrorMessage(resp.message || 'Donor dashboard data is unavailable. Please try again.');
       }
     } catch (err: any) {
+      setLoadFailed(true);
       setErrorMessage('Could not load donor dashboard data. Please try again.');
     } finally {
       setLoading(false);
@@ -78,11 +86,9 @@ export default function DonorDashboardPage() {
             profile: resp.data,
           });
         }
-        setSuccessMessage(
-          newStatus
-            ? 'Emergency availability set to: AVAILABLE FOR CALLS.'
-            : 'Emergency availability set to: OFF DUTY (Paused).'
-        );
+        setSuccessMessage(newStatus ? 'Availability is enabled for emergency requests.' : 'Availability is paused.');
+      } else {
+        setErrorMessage(resp.message || 'Availability could not be updated.');
       }
     } catch (err: any) {
       setErrorMessage('Failed to update emergency availability.');
@@ -129,8 +135,8 @@ export default function DonorDashboardPage() {
         state: state.trim(),
         pincode: pincode.trim(),
         weight_kg: weightNum,
-        gender,
-        is_available: profile ? profile.is_available : true,
+        gender: gender || undefined,
+        is_available: profile ? profile.is_available : isAvailable,
       });
 
       if (resp.success && resp.data) {
@@ -138,6 +144,8 @@ export default function DonorDashboardPage() {
         setShowEditProfile(false);
         setSuccessMessage('Donor profile saved successfully.');
         fetchDashboard();
+      } else {
+        setErrorMessage(resp.message || 'Donor profile could not be saved.');
       }
     } catch (err: any) {
       const msg = err.response?.data?.error?.message || 'Failed to save donor profile.';
@@ -158,7 +166,7 @@ export default function DonorDashboardPage() {
 
   // Profile completion gate: if no profile exists or required fields are missing
   const isProfileComplete = Boolean(
-    profile && profile.blood_type && profile.city && profile.weight_kg
+    dashboardData?.has_profile && profile && profile.blood_type && profile.city
   );
 
   return (
@@ -172,7 +180,7 @@ export default function DonorDashboardPage() {
               Voluntary Donor Portal
             </Badge>
           </div>
-          <h1 className="text-3xl font-black tracking-tight text-foreground">
+          <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
             {user?.first_name ? `${user.first_name}'s Donor Readiness` : 'Donor Dashboard'}
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
@@ -189,7 +197,7 @@ export default function DonorDashboardPage() {
               isLoading={toggling}
               className="font-bold shadow-sm"
             >
-              {profile?.is_available ? '🚨 Available for Emergencies' : '⏸️ Marked Off Duty'}
+                  {profile?.is_available ? 'Available for emergency requests' : 'Availability paused'}
             </Button>
             <Button
               variant="secondary"
@@ -203,131 +211,63 @@ export default function DonorDashboardPage() {
       </div>
 
       {/* Notifications */}
-      {errorMessage && (
-        <div className="rounded-lg border border-critical/40 bg-critical/10 p-4 text-xs font-semibold text-critical">
+      {errorMessage && !loadFailed && (
+        <div role="alert" className="rounded-lg border border-critical/40 bg-critical/10 p-4 text-sm font-medium text-critical">
           {errorMessage}
         </div>
       )}
       {successMessage && (
-        <div className="rounded-lg border border-green-500/40 bg-green-500/10 p-4 text-xs font-semibold text-green-700 dark:text-green-300">
+        <div role="status" className="rounded-lg border border-success/30 bg-success-subtle p-4 text-sm font-medium text-success">
           {successMessage}
         </div>
       )}
 
-      {/* GATED: First-Time Onboarding Form */}
-      {!isProfileComplete ? (
-        <Card className="border-primary/40 bg-card shadow-lg max-w-2xl mx-auto">
-          <CardHeader className="border-b border-border/60 pb-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="text-xl font-bold text-foreground">
-                  Complete Your Donor Profile
-                </CardTitle>
-                <CardDescription className="mt-1">
-                  Please complete the required information before using your donor dashboard.
-                </CardDescription>
-              </div>
-              <span className="text-xs text-muted-foreground">
-                <span className="text-destructive font-bold">*</span> Required field
-              </span>
-            </div>
+      {loadFailed ? (
+        <Card role="alert" className="mx-auto max-w-xl">
+          <CardHeader>
+            <CardTitle>Donor workspace unavailable</CardTitle>
+            <CardDescription>Your profile and eligibility were not changed. Try loading them again.</CardDescription>
+          </CardHeader>
+          <CardContent><Button type="button" onClick={() => void fetchDashboard()} isLoading={loading}>Try again</Button></CardContent>
+        </Card>
+      ) : dashboardData?.has_profile === false ? (
+        <Card className="mx-auto max-w-2xl border-border bg-card">
+          <CardHeader className="border-b border-border pb-4">
+            <CardTitle>Complete your donor profile</CardTitle>
+            <CardDescription>Enter your own details. Required fields are marked; no sample values are prefilled.</CardDescription>
           </CardHeader>
           <CardContent className="pt-6">
-            <form onSubmit={handleSaveProfile} className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <form onSubmit={handleSaveProfile} className="space-y-5">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">
-                    Blood Type <span className="text-destructive">*</span>
-                  </label>
-                  <select
-                    value={bloodType}
-                    onChange={(e) => setBloodType(e.target.value)}
-                    className="w-full h-10 rounded-lg border border-border bg-background px-3 text-sm text-foreground font-bold focus:outline-none focus:ring-2 focus:ring-primary"
-                    required
-                  >
-                    {['O-', 'O+', 'A-', 'A+', 'B-', 'B+', 'AB-', 'AB+'].map((bg) => (
-                      <option key={bg} value={bg}>{bg}</option>
-                    ))}
+                  <label htmlFor="donor-blood-type" className="mb-1.5 block text-sm font-medium text-foreground">Blood type <span aria-hidden="true" className="text-critical">*</span></label>
+                  <select id="donor-blood-type" autoComplete="off" value={bloodType} onChange={(e) => setBloodType(e.target.value)} className="min-h-11 w-full rounded-lg border border-border bg-card px-3 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" required>
+                    <option value="" disabled>Select blood type</option>
+                    {['O-', 'O+', 'A-', 'A+', 'B-', 'B+', 'AB-', 'AB+'].map((bg) => <option key={bg} value={bg}>{bg}</option>)}
                   </select>
                 </div>
-
                 <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">
-                    Gender <span className="text-destructive">*</span>
-                  </label>
-                  <select
-                    value={gender}
-                    onChange={(e) => setGender(e.target.value)}
-                    className="w-full h-10 rounded-lg border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                    required
-                  >
-                    <option value="MALE">Male</option>
-                    <option value="FEMALE">Female</option>
-                    <option value="OTHER">Other</option>
-                    <option value="PREFER_NOT_TO_SAY">Prefer not to say</option>
+                  <label htmlFor="donor-gender" className="mb-1.5 block text-sm font-medium text-foreground">Gender (optional)</label>
+                  <select id="donor-gender" value={gender} onChange={(e) => setGender(e.target.value)} className="min-h-11 w-full rounded-lg border border-border bg-card px-3 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                    <option value="">Prefer not to provide</option>
+                    <option value="MALE">Male</option><option value="FEMALE">Female</option><option value="OTHER">Other</option><option value="PREFER_NOT_TO_SAY">Prefer not to say</option>
                   </select>
                 </div>
+                <div><label htmlFor="donor-city" className="mb-1.5 block text-sm font-medium text-foreground">City <span aria-hidden="true" className="text-critical">*</span></label><Input id="donor-city" autoComplete="address-level2" value={city} onChange={(e) => setCity(e.target.value)} placeholder="Your city" required /></div>
+                <div><label htmlFor="donor-state" className="mb-1.5 block text-sm font-medium text-foreground">State <span aria-hidden="true" className="text-critical">*</span></label><Input id="donor-state" autoComplete="address-level1" value={state} onChange={(e) => setState(e.target.value)} placeholder="Your state" required /></div>
+                <div><label htmlFor="donor-pincode" className="mb-1.5 block text-sm font-medium text-foreground">PIN code <span aria-hidden="true" className="text-critical">*</span></label><Input id="donor-pincode" inputMode="numeric" autoComplete="postal-code" value={pincode} onChange={(e) => setPincode(e.target.value)} placeholder="Your PIN code" required /></div>
+              <div><label htmlFor="donor-weight" className="mb-1.5 block text-sm font-medium text-foreground">Weight (kg) <span aria-hidden="true" className="text-critical">*</span></label><Input id="donor-weight" type="number" inputMode="decimal" min="45" max="250" value={weightKg} onChange={(e) => setWeightKg(e.target.value)} placeholder="Enter your current weight" required /><p className="mt-1 text-xs text-muted-foreground">The existing form requires at least 45 kg.</p></div>
               </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">
-                    City <span className="text-destructive">*</span>
-                  </label>
-                  <Input
-                    value={city}
-                    onChange={(e) => setCity(e.target.value)}
-                    placeholder="e.g. Mumbai"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">
-                    State <span className="text-destructive">*</span>
-                  </label>
-                  <Input
-                    value={state}
-                    onChange={(e) => setState(e.target.value)}
-                    placeholder="e.g. Maharashtra"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">
-                    Pincode <span className="text-destructive">*</span>
-                  </label>
-                  <Input
-                    value={pincode}
-                    onChange={(e) => setPincode(e.target.value)}
-                    placeholder="e.g. 400001"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">
-                  Weight (kg) <span className="text-destructive">*</span> (min 45 kg)
-                </label>
-                <Input
-                  type="number"
-                  min="45"
-                  max="250"
-                  value={weightKg}
-                  onChange={(e) => setWeightKg(e.target.value)}
-                  placeholder="e.g. 65"
-                  required
-                />
-              </div>
-
-              <div className="pt-4 border-t border-border/60">
-                <Button type="submit" variant="primary" size="lg" isLoading={saving} className="w-full font-bold">
-                  Save Profile &amp; Open Dashboard →
-                </Button>
-              </div>
+              <label htmlFor="donor-availability" className="flex min-h-11 items-center gap-3 text-sm text-foreground">
+                <input id="donor-availability" type="checkbox" checked={isAvailable} onChange={(e) => setIsAvailable(e.target.checked)} className="h-5 w-5 rounded border-border text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" />
+                Make me available for emergency requests
+              </label>
+              <Button type="submit" variant="primary" size="lg" isLoading={saving} className="w-full sm:w-auto">Save donor profile</Button>
             </form>
           </CardContent>
         </Card>
+      ) : !isProfileComplete ? (
+        <Card role="alert"><CardContent className="py-6 text-sm text-critical">The donor profile response is incomplete. Refresh the page or contact support.</CardContent></Card>
       ) : (
         <>
           {/* Key Metrics Cards */}
@@ -365,7 +305,7 @@ export default function DonorDashboardPage() {
                   {profile?.is_available ? 'Active Standby' : 'Paused'}
                 </div>
                 <p className="text-[11px] text-muted-foreground mt-1">
-                  {profile?.is_available ? 'Receiving local emergency alerts' : 'Alert notifications paused'}
+                  {profile?.is_available ? 'Availability is enabled for requests' : 'Availability is paused'}
                 </p>
               </CardContent>
             </Card>
@@ -376,17 +316,19 @@ export default function DonorDashboardPage() {
                   <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
                     Donation Cooldown
                   </span>
-                  <Badge variant={dashboardData?.days_until_eligible === 0 ? 'success' : 'outline'}>
-                    {dashboardData?.days_until_eligible === 0 ? 'Eligible Now' : `${dashboardData?.days_until_eligible}d left`}
+                  <Badge variant={dashboardData?.is_eligible ? 'success' : 'outline'}>
+                  {dashboardData?.is_eligible ? 'Eligible' : dashboardData?.days_until_eligible ? `${dashboardData.days_until_eligible} days left` : 'Not confirmed'}
                   </Badge>
                 </div>
                 <div className="text-lg font-bold text-foreground mt-2">
-                  {dashboardData?.days_until_eligible === 0
-                    ? 'Medically Eligible'
-                    : `In Cooldown (${dashboardData?.days_until_eligible} days)`}
+                  {dashboardData?.is_eligible
+                    ? 'Eligible per current record'
+                    : dashboardData?.days_until_eligible
+                      ? `In cooldown (${dashboardData.days_until_eligible} days)`
+                      : 'Eligibility not confirmed'}
                 </div>
                 <p className="text-[11px] text-muted-foreground mt-1">
-                  56-day whole blood recovery standard
+                  Based on the eligibility information returned by the donor service.
                 </p>
               </CardContent>
             </Card>
@@ -397,13 +339,13 @@ export default function DonorDashboardPage() {
                   <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
                     Total Donations
                   </span>
-                  <Badge variant="default">{profile?.total_donations}</Badge>
+                  <Badge variant="default">{profile?.total_donations ?? 'Unavailable'}</Badge>
                 </div>
                 <div className="text-2xl font-black text-foreground mt-2">
-                  {profile?.total_donations}
+                  {profile?.total_donations ?? 'Unavailable'}
                 </div>
                 <p className="text-[11px] text-muted-foreground mt-1">
-                  Est. {dashboardData?.estimated_lives_saved || 0} lives impacted
+                  {dashboardData?.estimated_lives_saved != null ? `Estimated impact: ${dashboardData.estimated_lives_saved}` : 'Impact estimate unavailable'}
                 </p>
               </CardContent>
             </Card>
@@ -511,11 +453,11 @@ export default function DonorDashboardPage() {
                   Active Emergency Opportunities
                 </h2>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  Live emergency requisitions compatible with your Type {profile?.blood_type} blood in {profile?.city}
+                  Current requests returned by the matching service for your profile in {profile?.city}
                 </p>
               </div>
               <Badge variant="outline">
-                {dashboardData?.compatible_opportunities.length || 0} Opportunities
+                {dashboardData?.compatible_opportunities.length || 0} requests
               </Badge>
             </div>
 
@@ -526,15 +468,14 @@ export default function DonorDashboardPage() {
                     <CardHeader className="pb-3 border-b border-border/60">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <span className="h-2.5 w-2.5 rounded-full bg-critical animate-pulse" />
                           <span className="font-mono text-xs font-bold text-foreground">{opp.request_number}</span>
                         </div>
-                        <Badge variant="critical" className="font-bold text-xs">
-                          🚨 {opp.urgency_level}
+                        <Badge variant={opp.urgency_level === 'CRITICAL' ? 'critical' : opp.urgency_level === 'HIGH' ? 'high' : 'outline'} className="font-bold text-xs">
+                          {opp.urgency_level} urgency
                         </Badge>
                       </div>
                       <CardTitle className="text-base font-bold text-foreground mt-2">
-                        {opp.hospital_name || 'Emergency Trauma Center'}
+                        {opp.hospital_name || 'Facility name not provided'}
                       </CardTitle>
                     </CardHeader>
 
@@ -552,11 +493,11 @@ export default function DonorDashboardPage() {
 
                         <div className="p-2.5 rounded-lg bg-muted/40 border border-border/60">
                           <span className="text-[10px] uppercase font-bold text-muted-foreground block mb-0.5">
-                            Units Required
+                            Component and units
                           </span>
                           <span className="text-sm font-black text-foreground flex items-center gap-1">
-                            <span>🩸</span>
-                            <span>{opp.units_requested} {opp.units_requested === 1 ? 'unit' : 'units'}</span>
+                            <span>{opp.component.replaceAll('_', ' ')}</span>
+                            <span>· {opp.units_requested} {opp.units_requested === 1 ? 'unit' : 'units'}</span>
                           </span>
                         </div>
                       </div>
@@ -587,8 +528,8 @@ export default function DonorDashboardPage() {
                 <CardContent className="py-12 text-center space-y-2">
                   <div className="text-3xl">🕊️</div>
                   <h3 className="text-sm font-bold text-foreground">No compatible emergency blood requests are currently available.</h3>
-                  <p className="text-xs text-muted-foreground max-w-md mx-auto">
-                    Your readiness is on standby. When a nearby hospital or patient requires Type {profile?.blood_type} blood, you will be notified immediately.
+                  <p className="text-sm text-muted-foreground max-w-md mx-auto">
+                    Your profile has no compatible requests in the results currently available. Check this page again for updated results.
                   </p>
                 </CardContent>
               </Card>

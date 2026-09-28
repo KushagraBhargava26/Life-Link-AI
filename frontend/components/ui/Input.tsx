@@ -32,7 +32,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
       {label && (
         <label
           htmlFor={inputId}
-          className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground"
+          className="block text-sm font-medium text-foreground"
         >
           {label}
           {props.required && (
@@ -50,7 +50,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
           aria-invalid={!!error}
           aria-describedby={error ? errorId : helperText ? helperId : undefined}
           className={cn(
-            'w-full h-10 rounded-lg border bg-card px-3.5 text-sm text-foreground transition-colors',
+            'w-full min-h-11 rounded-lg border bg-card px-3.5 text-sm text-foreground transition-colors',
             'placeholder:text-muted-foreground/70',
             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background',
             'disabled:cursor-not-allowed disabled:opacity-50',

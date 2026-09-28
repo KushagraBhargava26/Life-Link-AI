@@ -23,6 +23,7 @@ export default function HospitalProfilePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   // Deletion states
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -74,7 +75,7 @@ export default function HospitalProfilePage() {
         if (err.response?.status === 404) {
           setIsExisting(false);
         } else {
-          setMessage({ type: 'error', text: 'Failed to load hospital facility profile.' });
+          setLoadError('Could not load the saved facility profile. No changes have been made.');
         }
       } finally {
         setIsLoading(false);
@@ -118,7 +119,7 @@ export default function HospitalProfilePage() {
         const created = await hospitalService.createProfile(payload);
         setHospital(created);
         setIsExisting(true);
-        setMessage({ type: 'success', text: 'Hospital facility registered and activated successfully!' });
+        setMessage({ type: 'success', text: 'Hospital facility profile created. Review the verification status shown above.' });
       }
     } catch (err: any) {
       setMessage({
@@ -141,6 +142,15 @@ export default function HospitalProfilePage() {
     );
   }
 
+  if (loadError) {
+    return (
+      <Card role="alert" className="mx-auto max-w-xl">
+        <CardHeader><CardTitle>Facility profile unavailable</CardTitle><CardDescription>{loadError}</CardDescription></CardHeader>
+        <CardContent><Button type="button" onClick={() => window.location.reload()}>Try again</Button></CardContent>
+      </Card>
+    );
+  }
+
   return (
     <div className="max-w-4xl mx-auto space-y-8 animate-fade-in">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-border pb-6">
@@ -158,7 +168,7 @@ export default function HospitalProfilePage() {
             )}
           </div>
           <p className="text-sm text-muted-foreground">
-            Official registration and clinical operational capacity for trauma coordination. Complete registration activates facility features immediately.
+            Maintain facility identification, location, contact and capacity details. Verification status is provided by the service.
           </p>
         </div>
 
@@ -173,6 +183,7 @@ export default function HospitalProfilePage() {
 
       {message && (
         <div
+          role={message.type === 'success' ? 'status' : 'alert'}
           className={`p-4 rounded-xl border text-sm ${
             message.type === 'success'
               ? 'border-success/30 bg-success-subtle text-success font-medium'

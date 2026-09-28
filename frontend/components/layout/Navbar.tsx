@@ -1,17 +1,17 @@
 'use client';
 
-// frontend/components/layout/Navbar.tsx
-// LifeLink AI — Global Healthcare Navigation
-// Architecture Reference: ARCHITECTURE.md Section 15
-
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
 import { authService } from '@/services/authService';
 import { Button } from '@/components/ui/Button';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
-import { getPrimaryRole, isHospitalStaff, isBloodBankStaff, isDonor, isAdmin } from '@/lib/auth';
+
+const publicLinks = [
+  { label: 'Home', href: '/' },
+  { label: 'About', href: '/about' },
+];
 
 export function Navbar() {
   const router = useRouter();
@@ -20,15 +20,22 @@ export function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
 
+  useEffect(() => setMounted(true), []);
+  useEffect(() => setMobileMenuOpen(false), [pathname]);
   useEffect(() => {
-    setMounted(true);
-  }, []);
+    if (!mobileMenuOpen) return;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setMobileMenuOpen(false);
+    };
+    window.addEventListener('keydown', closeOnEscape);
+    return () => window.removeEventListener('keydown', closeOnEscape);
+  }, [mobileMenuOpen]);
 
   const handleLogout = async () => {
     try {
       await authService.logout();
-    } catch (e) {
-      // ignore
+    } catch {
+      // Clear the local session even if the network is unavailable.
     } finally {
       clearAuth();
       setMobileMenuOpen(false);
@@ -36,336 +43,93 @@ export function Navbar() {
     }
   };
 
-  const primaryRole = getPrimaryRole(user);
-
-  const isActive = (path: string) => {
-    if (path === '/') return pathname === '/';
-    return pathname.startsWith(path);
-  };
+  const dashboardHref = '/dashboard';
+  const menuId = 'primary-navigation-mobile';
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-border/80 bg-background/95 backdrop-blur-md transition-colors">
-      <div className="container mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-        
-        {/* Brand Logo & Left Nav Items */}
-        <div className="flex items-center gap-6 sm:gap-8">
-          <Link
-            href="/"
-            className="flex items-center gap-2.5 transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-lg py-1 px-1.5"
-          >
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-white shadow-sm shadow-primary/20">
-              <span className="text-xl leading-none" aria-hidden="true">🩸</span>
-            </div>
-            <div className="flex flex-col">
-              <div className="flex items-center gap-1.5">
-                <span className="text-lg font-extrabold tracking-tight text-foreground">
-                  LifeLink
-                </span>
-                <span className="rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-primary">
-                  AI
-                </span>
-              </div>
-              <span className="text-[10px] font-medium tracking-wide text-muted-foreground uppercase -mt-1">
-                Emergency Network
-              </span>
-            </div>
+    <header className="sticky top-0 z-40 w-full border-b border-border bg-background/95 backdrop-blur-md">
+      <div className="container mx-auto flex min-h-16 max-w-7xl items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
+        <Link
+          href="/"
+          className="flex min-h-11 shrink-0 items-center gap-2 rounded-lg px-1.5 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          aria-label="LifeLink AI home"
+        >
+          <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-base font-bold text-primary-foreground" aria-hidden="true">LL</span>
+          <span className="flex flex-col">
+            <span className="flex items-center gap-1.5 text-lg font-extrabold leading-5 tracking-tight text-foreground">
+              LifeLink <span className="rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-bold tracking-wide text-primary">AI</span>
+            </span>
+            <span className="text-[10px] font-medium leading-4 tracking-wide text-muted-foreground">Emergency coordination</span>
+          </span>
+        </Link>
+
+        <nav className="hidden items-center gap-5 text-sm font-medium lg:flex" aria-label="Primary navigation">
+          {publicLinks.map((item) => {
+            const active = item.href === '/' ? pathname === '/' : pathname.startsWith(item.href);
+            return <Link key={item.href} href={item.href} aria-current={active ? 'page' : undefined} className={`rounded-md px-2 py-2 transition-colors hover:text-foreground ${active ? 'font-semibold text-primary' : 'text-muted-foreground'}`}>{item.label}</Link>;
+          })}
+          <Link href="/emergency" aria-current={pathname === '/emergency' ? 'page' : undefined} className="inline-flex min-h-11 items-center rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+            Emergency request
           </Link>
+        </nav>
 
-          {/* Desktop Navigation Links */}
-          <nav className="hidden md:flex items-center gap-6 text-sm font-medium" aria-label="Main Navigation">
-            {/* Common Links: Home -> About */}
-            <Link
-              href="/"
-              className={`transition-colors hover:text-foreground ${
-                pathname === '/' ? 'text-foreground font-semibold text-primary' : 'text-muted-foreground'
-              }`}
-            >
-              Home
-            </Link>
-            <Link
-              href="/about"
-              className={`transition-colors hover:text-foreground ${
-                isActive('/about') ? 'text-foreground font-semibold text-primary' : 'text-muted-foreground'
-              }`}
-            >
-              About
-            </Link>
-            <Link
-              href="/emergency"
-              className="flex items-center gap-1.5 font-bold text-xs px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white shadow-sm transition-all"
-            >
-              <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
-              <span>Hospital Emergency</span>
-            </Link>
-
-            {/* Authenticated Role-Specific Links */}
-            {mounted && isAuthenticated && (
-              <>
-                {isDonor(primaryRole) && (
-                  <>
-                    <Link
-                      href="/donor"
-                      className={`transition-colors hover:text-foreground flex items-center gap-1 ${
-                        pathname === '/donor' ? 'text-primary font-semibold' : 'text-muted-foreground'
-                      }`}
-                    >
-                      <span>Donor Dashboard</span>
-                    </Link>
-                    <Link
-                      href="/donor/profile"
-                      className={`transition-colors hover:text-foreground ${
-                        pathname === '/donor/profile' ? 'text-primary font-semibold' : 'text-muted-foreground'
-                      }`}
-                    >
-                      Profile
-                    </Link>
-                  </>
-                )}
-
-                {isHospitalStaff(primaryRole) && (
-                  <>
-                    <Link
-                      href="/hospital"
-                      className={`transition-colors hover:text-foreground ${
-                        pathname === '/hospital' ? 'text-primary font-semibold' : 'text-muted-foreground'
-                      }`}
-                    >
-                      Hospital Console
-                    </Link>
-                    <Link
-                      href="/hospital/emergency"
-                      className={`transition-colors hover:text-foreground flex items-center gap-1 font-bold ${
-                        isActive('/hospital/emergency') ? 'text-primary' : 'text-red-600 dark:text-red-400'
-                      }`}
-                    >
-                      <span>🚨</span>
-                      <span>Emergency Desk</span>
-                    </Link>
-                    <Link
-                      href="/hospital/requests"
-                      className={`transition-colors hover:text-foreground ${
-                        isActive('/hospital/requests') ? 'text-primary font-semibold' : 'text-muted-foreground'
-                      }`}
-                    >
-                      Requisitions
-                    </Link>
-                    <Link
-                      href="/hospital/profile"
-                      className={`transition-colors hover:text-foreground ${
-                        isActive('/hospital/profile') ? 'text-primary font-semibold' : 'text-muted-foreground'
-                      }`}
-                    >
-                      Profile
-                    </Link>
-                  </>
-                )}
-
-                {isBloodBankStaff(primaryRole) && (
-                  <>
-                    <Link
-                      href="/blood-bank"
-                      className={`transition-colors hover:text-foreground ${
-                        pathname === '/blood-bank' ? 'text-primary font-semibold' : 'text-muted-foreground'
-                      }`}
-                    >
-                      Blood Bank
-                    </Link>
-                    <Link
-                      href="/blood-bank"
-                      className="text-muted-foreground hover:text-foreground transition-colors"
-                    >
-                      Inventory
-                    </Link>
-                    <Link
-                      href="/blood-bank/profile"
-                      className={`transition-colors hover:text-foreground ${
-                        isActive('/blood-bank/profile') ? 'text-primary font-semibold' : 'text-muted-foreground'
-                      }`}
-                    >
-                      Profile
-                    </Link>
-                  </>
-                )}
-
-                {isAdmin(primaryRole) && (
-                  <Link
-                    href="/admin"
-                    className={`transition-colors hover:text-foreground ${
-                      isActive('/admin') ? 'text-primary font-semibold' : 'text-muted-foreground'
-                    }`}
-                  >
-                    Admin Dashboard
-                  </Link>
-                )}
-              </>
-            )}
-          </nav>
-        </div>
-
-        {/* Desktop Right Actions: [Sign In] [Register] or [User Menu] [Sign Out] */}
-        <div className="hidden md:flex items-center gap-3">
+        <div className="hidden items-center gap-2 lg:flex">
           <ThemeToggle />
-
           {mounted && isAuthenticated ? (
-            <div className="flex items-center gap-2">
-              <Link href="/dashboard">
-                <Button variant="ghost" size="sm" className="font-medium text-xs">
-                  <span>👤</span>
-                  <span>{user?.first_name || 'Account'}</span>
-                </Button>
+            <>
+              <Link href={dashboardHref} className="inline-flex min-h-11 max-w-44 items-center truncate rounded-lg px-3 text-sm font-medium text-foreground hover:bg-muted" title={user?.email || 'Account'}>
+                {user?.first_name || 'My account'}
               </Link>
-              <Button variant="outline" size="sm" onClick={handleLogout} className="text-xs">
-                Sign Out
-              </Button>
-            </div>
+              <Button variant="outline" size="sm" onClick={handleLogout}>Sign out</Button>
+            </>
           ) : (
-            <div className="flex items-center gap-2">
-              <Link href="/login">
-                <Button variant="ghost" size="sm" className="font-medium text-xs">
-                  Sign In
-                </Button>
-              </Link>
-              <Link href="/register">
-                <Button variant="primary" size="sm" className="font-medium text-xs shadow-sm">
-                  Register
-                </Button>
-              </Link>
-            </div>
+            <>
+              <Link href="/login" className="inline-flex min-h-11 items-center rounded-lg px-3 text-sm font-medium text-foreground hover:bg-muted">Sign in</Link>
+              <Link href="/register" className="inline-flex min-h-11 items-center rounded-lg border border-border px-3 text-sm font-medium text-foreground hover:bg-muted">Create account</Link>
+            </>
           )}
         </div>
 
-        {/* Mobile Action & Hamburger Toggle */}
-        <div className="flex items-center gap-2 md:hidden">
+        <div className="flex items-center gap-2 lg:hidden">
           <ThemeToggle />
-
           <button
             type="button"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            onClick={() => setMobileMenuOpen((open) => !open)}
             aria-expanded={mobileMenuOpen}
-            aria-label="Toggle navigation menu"
-            className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-card text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            aria-controls={menuId}
+            aria-label={mobileMenuOpen ? 'Close navigation menu' : 'Open navigation menu'}
+            className="inline-flex h-11 w-11 items-center justify-center rounded-lg border border-border bg-card text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             {mobileMenuOpen ? (
-              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
-              </svg>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="m18 6-12 12M6 6l12 12" /></svg>
             ) : (
-              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/>
-              </svg>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16" /></svg>
             )}
           </button>
         </div>
-
       </div>
 
-      {/* Mobile Menu Drawer */}
       {mobileMenuOpen && (
-        <div className="md:hidden border-b border-border bg-card px-4 py-6 shadow-xl animate-slide-in">
-          <nav className="flex flex-col space-y-3 text-base font-medium">
-            <Link
-              href="/"
-              onClick={() => setMobileMenuOpen(false)}
-              className="p-2 rounded-lg hover:bg-muted text-foreground transition-colors"
-            >
-              Home
-            </Link>
-            <Link
-              href="/about"
-              onClick={() => setMobileMenuOpen(false)}
-              className="p-2 rounded-lg hover:bg-muted text-foreground transition-colors"
-            >
-              About
-            </Link>
-            <Link
-              href="/emergency"
-              onClick={() => setMobileMenuOpen(false)}
-              className="p-2 rounded-lg bg-red-600 hover:bg-red-700 text-white font-bold text-sm flex items-center gap-2"
-            >
-              <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
-              <span>Hospital Emergency</span>
-            </Link>
-
+        <nav id={menuId} aria-label="Mobile navigation" className="border-t border-border bg-card px-4 py-4 shadow-lg lg:hidden sm:px-6">
+          <div className="mx-auto flex max-w-7xl flex-col gap-1">
+            {publicLinks.map((item) => (
+              <Link key={item.href} href={item.href} aria-current={(item.href === '/' ? pathname === '/' : pathname.startsWith(item.href)) ? 'page' : undefined} className="flex min-h-11 items-center rounded-lg px-3 text-sm font-medium text-foreground hover:bg-muted">{item.label}</Link>
+            ))}
+            <Link href="/emergency" aria-current={pathname === '/emergency' ? 'page' : undefined} className="my-1 flex min-h-11 items-center rounded-lg bg-primary px-3 text-sm font-semibold text-primary-foreground">Emergency request</Link>
             {mounted && isAuthenticated ? (
-              <div className="border-t border-border/60 pt-3 flex flex-col space-y-2">
-                <div className="p-2 text-xs text-muted-foreground flex items-center justify-between">
-                  <span>Signed in as:</span>
-                  <strong className="text-foreground">{user?.email}</strong>
-                </div>
-                {isDonor(primaryRole) && (
-                  <>
-                    <Link href="/donor" onClick={() => setMobileMenuOpen(false)}>
-                      <Button variant="secondary" size="md" className="w-full justify-start font-semibold text-xs">
-                        🩸 Donor Dashboard
-                      </Button>
-                    </Link>
-                    <Link href="/donor/profile" onClick={() => setMobileMenuOpen(false)}>
-                      <Button variant="ghost" size="md" className="w-full justify-start text-xs">
-                        👤 Donor Profile
-                      </Button>
-                    </Link>
-                  </>
-                )}
-                {isHospitalStaff(primaryRole) && (
-                  <>
-                    <Link href="/hospital" onClick={() => setMobileMenuOpen(false)}>
-                      <Button variant="secondary" size="md" className="w-full justify-start font-semibold text-xs">
-                        🏥 Hospital Dashboard
-                      </Button>
-                    </Link>
-                    <Link href="/hospital/requests" onClick={() => setMobileMenuOpen(false)}>
-                      <Button variant="outline" size="md" className="w-full justify-start text-xs">
-                        📋 Requisitions
-                      </Button>
-                    </Link>
-                    <Link href="/hospital/profile" onClick={() => setMobileMenuOpen(false)}>
-                      <Button variant="ghost" size="md" className="w-full justify-start text-xs">
-                        ⚙️ Hospital Profile
-                      </Button>
-                    </Link>
-                  </>
-                )}
-                {isBloodBankStaff(primaryRole) && (
-                  <>
-                    <Link href="/blood-bank" onClick={() => setMobileMenuOpen(false)}>
-                      <Button variant="secondary" size="md" className="w-full justify-start font-semibold text-xs">
-                        🩸 Blood Bank Dashboard
-                      </Button>
-                    </Link>
-                    <Link href="/blood-bank/profile" onClick={() => setMobileMenuOpen(false)}>
-                      <Button variant="ghost" size="md" className="w-full justify-start text-xs">
-                        ⚙️ Blood Bank Profile
-                      </Button>
-                    </Link>
-                  </>
-                )}
-                {isAdmin(primaryRole) && (
-                  <Link href="/admin" onClick={() => setMobileMenuOpen(false)}>
-                    <Button variant="secondary" size="md" className="w-full justify-start font-semibold text-xs">
-                      🛡️ Admin Dashboard
-                    </Button>
-                  </Link>
-                )}
-                <Button variant="outline" size="md" onClick={handleLogout} className="w-full text-xs mt-2">
-                  Sign Out
-                </Button>
-              </div>
+              <>
+                <div className="mt-2 border-t border-border px-3 pt-3 text-xs text-muted-foreground">Signed in as <span className="break-all font-medium text-foreground">{user?.email}</span></div>
+                <Link href={dashboardHref} className="flex min-h-11 items-center rounded-lg px-3 text-sm font-medium text-foreground hover:bg-muted">Open my workspace</Link>
+                <button type="button" onClick={handleLogout} className="flex min-h-11 items-center rounded-lg px-3 text-left text-sm font-medium text-foreground hover:bg-muted">Sign out</button>
+              </>
             ) : (
-              <div className="border-t border-border/60 pt-4 grid grid-cols-2 gap-3">
-                <Link href="/login" onClick={() => setMobileMenuOpen(false)}>
-                  <Button variant="outline" size="md" className="w-full text-xs">
-                    Sign In
-                  </Button>
-                </Link>
-                <Link href="/register" onClick={() => setMobileMenuOpen(false)}>
-                  <Button variant="primary" size="md" className="w-full text-xs">
-                    Register
-                  </Button>
-                </Link>
+              <div className="mt-2 grid grid-cols-2 gap-2 border-t border-border pt-3">
+                <Link href="/login" className="flex min-h-11 items-center justify-center rounded-lg border border-border px-3 text-sm font-medium text-foreground">Sign in</Link>
+                <Link href="/register" className="flex min-h-11 items-center justify-center rounded-lg bg-primary px-3 text-sm font-semibold text-primary-foreground">Create account</Link>
               </div>
             )}
-          </nav>
-        </div>
+          </div>
+        </nav>
       )}
     </header>
   );

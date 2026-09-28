@@ -136,6 +136,20 @@ async def test_login_invalid_password() -> None:
 
 
 @pytest.mark.asyncio
+async def test_login_unknown_account_is_rejected() -> None:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        response = await client.post("/api/v1/auth/login", json={
+            "email": f"missing_{uuid.uuid4().hex[:8]}@example.com",
+            "password": "AnyPassword123!",
+        })
+
+        assert response.status_code == 401
+        data = response.json()
+        assert data["success"] is False
+        assert data["error"]["code"] == "AUTH_INVALID_CREDENTIALS"
+
+
+@pytest.mark.asyncio
 async def test_me_unauthenticated() -> None:
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         # No token

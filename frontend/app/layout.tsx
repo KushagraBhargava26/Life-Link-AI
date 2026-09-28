@@ -29,7 +29,7 @@ export const metadata: Metadata = {
     template: '%s | LifeLink AI',
   },
   description:
-    'AI-powered platform connecting patients, blood donors, hospitals, and blood banks for emergency blood coordination. Find compatible donors in minutes.',
+    'Emergency blood coordination connecting patients, donors, hospitals, and blood banks through existing matching and inventory workflows.',
   keywords: [
     'blood donation',
     'emergency blood',
@@ -53,14 +53,14 @@ export const metadata: Metadata = {
     siteName: 'LifeLink AI',
     title: 'LifeLink AI — Emergency Blood & Organ Intelligence Platform',
     description:
-      'AI-powered emergency blood and organ coordination platform for India.',
+      'Emergency blood coordination platform for hospitals, donors, and blood banks in India.',
   },
 };
 
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  themeColor: '#dc2626',
+  themeColor: '#C9193A',
 };
 
 // ---------------------------------------------------------------------------
@@ -81,12 +81,12 @@ export default function RootLayout({ children }: RootLayoutProps) {
             __html: `
               try {
                 const saved = localStorage.getItem('lifelink-theme');
-                if (saved === 'light') {
-                  document.documentElement.classList.remove('dark');
-                  document.documentElement.style.colorScheme = 'light';
-                } else {
+                if (saved === 'dark') {
                   document.documentElement.classList.add('dark');
                   document.documentElement.style.colorScheme = 'dark';
+                } else {
+                  document.documentElement.classList.remove('dark');
+                  document.documentElement.style.colorScheme = 'light';
                 }
               } catch (e) {}
             `,

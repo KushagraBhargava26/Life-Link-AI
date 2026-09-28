@@ -25,6 +25,7 @@ function EmergencyIntakeContent() {
   const [patientAge, setPatientAge] = useState<string>('');
   const [notes, setNotes] = useState<string>('');
   const [trackNumberInput, setTrackNumberInput] = useState<string>('');
+  const [step, setStep] = useState(1);
 
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -96,20 +97,38 @@ function EmergencyIntakeContent() {
     }
   };
 
+  const handleContinue = () => {
+    setErrorMessage(null);
+    if (step === 2 && patientAge && (Number(patientAge) < 1 || Number(patientAge) > 120)) {
+      setErrorMessage('Enter an age from 1 to 120, or leave the field blank.');
+      return;
+    }
+    if (!hospitalName.trim() || !city.trim()) {
+      setErrorMessage('Enter the hospital or facility name and city to continue.');
+      return;
+    }
+    if (patientName.trim() && /\d/.test(patientName)) {
+      setErrorMessage('Patient identifier/name cannot contain numbers.');
+      setStep(2);
+      return;
+    }
+    setStep((current) => Math.min(3, current + 1));
+  };
+
   return (
     <div className="py-10 sm:py-16">
       <div className="container mx-auto max-w-4xl px-4 sm:px-6">
         
         {/* Top Header */}
-        <div className="text-center max-w-2xl mx-auto mb-8 space-y-3">
-          <div className="inline-flex items-center gap-2 rounded-full border border-critical/30 bg-critical/10 px-3.5 py-1 text-xs font-bold text-critical">
+        <div className="mx-auto mb-8 max-w-2xl space-y-3 text-center">
+          <div className="inline-flex items-center gap-2 rounded-full border border-critical/30 bg-critical/10 px-3.5 py-1 text-xs font-semibold text-critical">
             <span className="h-2 w-2 rounded-full bg-critical animate-pulse" />
             <span>CLINICAL EMERGENCY INTAKE DESK</span>
           </div>
-          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-foreground">
+          <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-4xl">
             Request Emergency Blood
           </h1>
-          <p className="text-sm text-muted-foreground">
+          <p className="mx-auto max-w-xl text-sm leading-6 text-muted-foreground sm:text-base">
             Zero-barrier submission for attending physicians, trauma teams, and family members. No account required.
           </p>
         </div>
@@ -128,7 +147,7 @@ function EmergencyIntakeContent() {
                 />
               </div>
               <Button type="submit" variant="secondary" size="md" className="w-full sm:w-auto sm:self-end h-10 font-semibold shrink-0 text-xs">
-                Track Live Status →
+                Track request status →
               </Button>
             </form>
           </CardContent>
@@ -136,7 +155,7 @@ function EmergencyIntakeContent() {
 
         {/* Error Alert */}
         {errorMessage && (
-          <div className="mb-8 rounded-xl border border-critical/40 bg-critical/10 p-4 text-sm font-medium text-critical" role="alert">
+          <div className="mb-6 rounded-xl border border-critical/40 bg-critical/10 p-4 text-sm font-medium text-critical" role="alert" aria-live="assertive">
             {errorMessage}
           </div>
         )}
@@ -158,7 +177,19 @@ function EmergencyIntakeContent() {
           </CardHeader>
 
           <CardContent className="pt-6">
+            <ol aria-label="Emergency request steps" className="mb-6 grid grid-cols-3 gap-2">
+              {['Request details', 'Optional details', 'Review'].map((label, index) => {
+                const number = index + 1;
+                const current = step === number;
+                return (
+                  <li key={label} aria-current={current ? 'step' : undefined} className={`border-b-2 pb-2 text-xs sm:text-sm ${current ? 'border-primary font-semibold text-primary' : step > number ? 'border-success text-foreground' : 'border-border text-muted-foreground'}`}>
+                    <span className="mr-1.5">{step > number ? '✓' : number}</span>{label}
+                  </li>
+                );
+              })}
+            </ol>
             <form onSubmit={handleSubmit} className="space-y-6">
+              <div hidden={step !== 1} className="space-y-6">
               
               {/* Blood Group Selector */}
               <div>
@@ -253,6 +284,9 @@ function EmergencyIntakeContent() {
                 </div>
               </div>
 
+              </div>
+
+              <div hidden={step !== 2} className="space-y-6">
               {/* Patient Details (Protected) */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Input
@@ -288,16 +322,33 @@ function EmergencyIntakeContent() {
                 />
               </div>
 
-              <div className="pt-2">
-                <Button
-                  type="submit"
-                  variant="danger"
-                  size="lg"
-                  className="w-full font-bold shadow-lg shadow-critical/20 text-base"
-                  isLoading={isSubmitting}
-                >
-                  <span>🚨 Broadcast Emergency Request</span>
-                </Button>
+              </div>
+
+              {step === 3 && (
+                <section aria-labelledby="review-request-heading" className="space-y-4 rounded-xl border border-border bg-muted/40 p-4 sm:p-5">
+                  <h3 id="review-request-heading" className="text-base font-semibold">Review request details</h3>
+                  <dl className="grid grid-cols-1 gap-3 text-sm sm:grid-cols-2">
+                    <div><dt className="text-muted-foreground">Blood group</dt><dd className="font-semibold">{bloodType}</dd></div>
+                    <div><dt className="text-muted-foreground">Units required</dt><dd className="font-semibold">{unitsRequired}</dd></div>
+                    <div><dt className="text-muted-foreground">Urgency</dt><dd className="font-semibold">{urgencyLevel}</dd></div>
+                    <div><dt className="text-muted-foreground">Hospital / facility</dt><dd className="font-semibold">{hospitalName}</dd></div>
+                    <div><dt className="text-muted-foreground">City</dt><dd className="font-semibold">{city}</dd></div>
+                    <div><dt className="text-muted-foreground">Patient details</dt><dd className="font-semibold">{patientName || 'Not provided'}{patientAge ? ` · age ${patientAge}` : ''}</dd></div>
+                    {notes && <div className="sm:col-span-2"><dt className="text-muted-foreground">Clinical notes</dt><dd className="break-words font-semibold">{notes}</dd></div>}
+                  </dl>
+                  <p className="text-xs leading-5 text-muted-foreground">Only provide details required to coordinate this request. Patient details are submitted to the service and are not shown in public tracking.</p>
+                </section>
+              )}
+
+              <div className="sticky bottom-0 -mx-4 flex gap-3 border-t border-border bg-card/95 px-4 py-3 backdrop-blur sm:static sm:mx-0 sm:border-0 sm:bg-transparent sm:p-0">
+                {step > 1 && <Button type="button" variant="outline" size="lg" className="flex-1 sm:flex-none" onClick={() => { setErrorMessage(null); setStep((current) => current - 1); }}>Back</Button>}
+                {step < 3 ? (
+                  <Button type="button" variant="primary" size="lg" className="flex-1 sm:flex-none" onClick={handleContinue}>Continue</Button>
+                ) : (
+                  <Button type="submit" variant="danger" size="lg" className="flex-1 font-semibold text-base sm:flex-none" isLoading={isSubmitting}>
+                    Submit emergency request
+                  </Button>
+                )}
               </div>
             </form>
           </CardContent>

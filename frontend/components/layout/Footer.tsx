@@ -16,16 +16,12 @@ export function Footer() {
           {/* Col 1: Platform Identity */}
           <div className="space-y-3">
             <div className="flex items-center gap-2">
-              <span className="text-2xl" aria-hidden="true">🩸</span>
+              <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-xs font-bold text-primary-foreground" aria-hidden="true">LL</span>
               <span className="text-lg font-bold tracking-tight">LifeLink AI</span>
             </div>
             <p className="text-xs text-muted-foreground leading-relaxed max-w-sm">
               Rapid emergency blood coordination connecting hospital trauma centers, licensed blood banks, and voluntary donors with deterministic medical safety.
             </p>
-            <div className="inline-flex items-center gap-1.5 rounded-full border border-green-500/30 bg-green-500/10 px-2.5 py-0.5 text-[11px] font-medium text-green-600 dark:text-green-400">
-              <span className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" />
-              <span>Platform Online • Coordination Active</span>
-            </div>
           </div>
 
           {/* Col 2: Navigation Links */}
@@ -68,7 +64,6 @@ export function Footer() {
                   href="/admin/login"
                   className="inline-flex items-center gap-1.5 text-primary hover:underline font-semibold"
                 >
-                  <span>🛡️</span>
                   <span>Admin Portal</span>
                 </Link>
               </li>

@@ -53,6 +53,8 @@ export default function HospitalMatchingWorkspacePage() {
       if (res.success && res.data) {
         setMatchRun(res.data);
         setSearchRadius(res.data.search_radius_km || radius);
+      } else {
+        setError('Matching results are unavailable. Try loading them again.');
       }
     } catch (err: any) {
       setError(err?.response?.data?.error?.message || 'Failed to execute matching.');
@@ -123,6 +125,17 @@ export default function HospitalMatchingWorkspacePage() {
     );
   }
 
+  if (!request) {
+    return (
+      <Card role="alert" className="mx-auto max-w-xl">
+        <CardContent className="space-y-4 py-8">
+          <p className="text-sm text-critical">{error || 'Requisition details are unavailable.'}</p>
+          <Button type="button" variant="outline" onClick={() => void fetchRequestDetails()}>Try again</Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
   const bloodBanks = matchRun?.blood_banks || [];
   const donors = matchRun?.donors || [];
   const acceptedDonors = donors.filter(d => d.donor_response_status === 'ACCEPTED');
@@ -159,7 +172,7 @@ export default function HospitalMatchingWorkspacePage() {
 
       {/* Action / Error Banners */}
       {error && (
-        <div className="p-4 bg-critical/10 border border-critical/30 rounded-xl text-critical text-sm flex items-center justify-between">
+        <div role="alert" className="p-4 bg-critical/10 border border-critical/30 rounded-xl text-critical text-sm flex items-center justify-between gap-3">
           <span>⚠️ {error}</span>
           <button onClick={() => setError(null)} className="font-bold text-lg leading-none">×</button>
         </div>
@@ -171,7 +184,7 @@ export default function HospitalMatchingWorkspacePage() {
         </div>
       )}
 
-      {/* Accepted Donors Real-time Banner */}
+      {/* Accepted donor response banner */}
       {acceptedDonors.length > 0 && (
         <div className="p-4 bg-success-subtle border border-success text-success-foreground font-bold rounded-xl text-sm space-y-1">
           {acceptedDonors.map(d => (
@@ -209,7 +222,7 @@ export default function HospitalMatchingWorkspacePage() {
                 </Badge>
               </div>
               <p className="text-sm text-text-muted">
-                Facility: <strong className="text-text">{request?.hospital_name || 'Hospital Trauma Desk'}</strong> • City: <strong className="text-text">{request?.city}</strong> • Requirement: <strong className="text-text">{request?.units_required} Units</strong> ({request?.units_fulfilled} fulfilled)
+                Facility: <strong className="text-text">{request?.hospital_name || 'Facility name not provided'}</strong> • City: <strong className="text-text">{request?.city}</strong> • Requirement: <strong className="text-text">{request?.units_required} Units</strong> ({request?.units_fulfilled} fulfilled)
               </p>
             </div>
 
@@ -237,7 +250,7 @@ export default function HospitalMatchingWorkspacePage() {
                 onClick={() => handleReRunMatching(searchRadius)}
                 isLoading={isMatchingRunning}
               >
-                🔄 Re-run AI Matching
+                Refresh matching results
               </Button>
             </div>
           </div>
@@ -271,7 +284,7 @@ export default function HospitalMatchingWorkspacePage() {
       </div>
 
       {/* Zero Candidates Empty State */}
-      {!isMatchingRunning && totalCandidates === 0 && (
+      {!isMatchingRunning && matchRun && totalCandidates === 0 && (
         <Card className="border-border p-10 text-center">
           <div className="max-w-md mx-auto space-y-4">
             <div className="w-16 h-16 mx-auto bg-warning/10 text-warning rounded-full flex items-center justify-center text-2xl font-bold">
@@ -296,6 +309,15 @@ export default function HospitalMatchingWorkspacePage() {
               </Link>
             </div>
           </div>
+        </Card>
+      )}
+
+      {!isMatchingRunning && !matchRun && (
+        <Card role={error ? 'alert' : undefined} className="border-border">
+          <CardContent className="flex flex-col items-start gap-3 py-6">
+            <p className="text-sm text-foreground">Matching results are not available yet.</p>
+            <Button type="button" variant="outline" size="sm" onClick={() => void fetchMatches(searchRadius)}>Load matching results</Button>
+          </CardContent>
         </Card>
       )}
 

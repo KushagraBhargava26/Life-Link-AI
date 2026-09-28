@@ -1,0 +1,255 @@
+[0] The Self-Limiting Dynamics of AI Automation: A Chessboard Model of Economic Collapse
+[1] Shivang Mishra, Dr. Karthik G. L.
+[2] VIT Bhopal University Bhopal, India, VIT Bhopal University Bhopal, India
+[3] Abstract: The rapid integration of artificial intelligence into production processes presents  fundamental questions about the long-term stability of advanced economies. Current economic models often analyze automation in aggregate, overlooking two critical dimensions: the systemic feedback loops between corporate automation decisions and aggregate demand, and the spatial propagation of economic shocks across sectors and regions. This paper addresses this gap by developing the chessboard economy, a novel computational model that simulates these dynamics on a two-dimensional grid. The core finding reveals a self-limiting paradox: the pursuit of efficiency through automation, when exceeding a critical threshold of approximately 7.3% annual job displacement triggers a cascade of employment loss, collapsing consumer demand, and ultimately erodes the profitability of the automating firms themselves. A significant contribution of this framework is its spatial dimension, which visualizes how job loss radiates from automated epicenters, creating regional ’automation deserts’ and exacerbating inequality. Furthermore, the model serves as a testbed for policy interventions, demonstrating that hybrid approaches combining Universal Basic Income with progressive taxation most effectively mitigate systemic collapse. This study provides a spatially grounded, systems-level analysis essential for designing policies that can harness AI’s benefits while maintaining economic resilience.
+[4] Keywords: AI economics, agent-based modeling, automation disruption, economic instability, chessboard economy, UBI, computational economics, labor market dynamics
+[5] INTRODUCTION
+[6] Artificial Intelligence has been hailed as the engine of the Fourth Industrial Revolution, promising un- paralleled productivity gains [1]. However, its impact on labor markets remains a contentious issue [2].We identify a Schrodinger’s Cat-like paradox: AI simultaneously boosts productivity and erodes the economic system sustaining it. As jobs disappear due to automation, consumer spending collapses, eventually harming the very industries driving automation [3].To study this effect, we introduce a new modeling framework “ the chessboard economy”  in which agents are arranged on a 2D grid resembling a chessboard, allowing spatial visualization of wage distribution and job loss over time.
+[7] Our simulation reveals how unchecked AI adoption can lead to systemic instability rather than infinite efficiency [4]. This insight contributes to ongoing debates in AI ethics, labor economics, and public policy.
+[8] Literature Review
+[9] The economic implications of AI-driven automation have been widely debated in recent research [1, 2, 5]. Studies suggest that while automation enhances productivity, its impact on employment and inequality remains complex [6]. Acemoglu and Restrepo [5] in thier finidngs observed that robotics adoption in the
+[10] U.S. led to significant job displacement without proportional productivity gains at the national level. Similarly, Autor [2] observed labor market polarization, where automation reduces mid-skill jobs while increasing demand for high-skill technical roles and low-skill service work. These findings challenge the assumption that technological progress inherently benefits all segments of the workforce [7].
+[11] Beyond labor markets, scholars have examined how automation reshapes economic systems [8, 9]. Brynjolfsson and McAfee [1] argued that AI could drive unprecedented efficiency but may exacerbate income inequality if left unregulated. Conversely, Bessen [6] contended that automation often complements human labor rather than replacing it outright, particularly in industries requiring adaptability. However, this perspective assumes workers can transition seamlessly to new roles; a premise questioned by Ford [3], who warned of structural unemployment if job creation lags behind displacement.
+[12] Policy responses to these disruptions have also been explored [10]. Universal Basic Income (UBI) has emerged as a potential solution, with pilot programs in Finland [11] and Kenya [10] demonstrating improved well-being among recipients. Piketty [7] emphasized progressive taxation to mitigate wealth concentration, while Farmer et al. Finally, Mounting evidence reveals the dangers of unchecked automation [4, 12]. Scholars argue that excessive AI adoption may destabilize economies by gradually eroding consumer purchasing power; a risk highlighted by Harari [13] and empirically demonstrated by West [4].
+[13] Methodology
+[14] Firm-Level Perspective of hyper connected economy
+[15] Everyone talks about automation from their own angle politicians worry about jobs, workers stress over wages, companies chase productivity. In this paper take a step back and see how all the components in the system that are advocated individually are actually interconnected and have a huge effect of each other. We see how each piece connects.
+[16] Upgrade a machine, and factories run smoother. Adjust an algorithm, and suddenly whole job categories shift. It’s not random; it’s a chain reaction. Change one thing, and the rest follows, like dominoes.
+[17] The Sensitivity Constant
+[18] Initial conditions determine long-term outcomes through:
+[19] (1)
+[20] where λ > 1 indicates chaotic regimes (butterfly effect).
+[21] Empirical Signatures
+[22] Positive Feedback: 2019-23 US tech sector shows λ = 1.2 ± 0.3
+[23] Stabilization: Nordic labor policies achieve λ = 0.8 via η > 0.15
+[24] Mathematical Framework
+[25] We define the core variables governing the economic system:
+[26] Symbol
+[27] Meaning
+[28] Lt
+[29] Number of employed workers at time t
+[30] Ct
+[31] Total consumption at time t
+[32] Tt
+[33] Tax revenue collected by government at time t
+[34] St
+[35] Stimulus injected into economy at time t
+[36] Pₜᴬᴵ
+[37] Profit earned by AI firm at time t
+[38] Rₜⁿᵒⁿᴬᴵ
+[39] Revenue of non-AI firms at time t
+[40] α
+[41] Job automation rate (fraction automated per step)
+[42] β
+[43] Propensity to consume
+[44] γ
+[45] Demand elasticity factor
+[46] τ
+[47] Tax rate applied to wages and firm revenues
+[48] ϵ
+[49] Sensitivity of AI profit to market demand drop
+[50] Employment Evolution
+[51] At each time step, a fraction α of currently employed workers are replaced by AI:
+[52] Lt+1 = Lt − ⌊αLt⌋(1)
+[53] Where:
+[54] Lt = Current employed workers (e.g., 1,000 jobs)
+[55] α = 5% automation rate means α = 0.05
+[56] ⌊·⌋ ensures whole jobs are removed (e.g., ⌊0.05 × 1000⌋ = 50 jobs lost)
+[57] Consumption Function
+[58] Each worker consumes a fixed proportion β of their wage if employed:
+[59] Where:
+[60] β = 0.8 means workers spend 80% of their wage (wi)
+[61] ci = Consumption per worker (e.g., $80 if wi = $100)
+[62] With government stimulus St:
+[63] Example: If 50 workers lose jobs and St = $10, 000, consumption drops by $4, 000 (50 × $80) but gains
+[64] $10, 000 stimulus.
+[65] Non-AI Firm Revenue
+[66] Revenue depends linearly on total consumption:
+[67] (4)
+[68] Where:
+[69] γ = 0.7 means firms earn $0.70 for every $1 of consumption
+[70] If Ct = $100, 000, revenue = $70,000
+[71] Tax Revenue
+[72] Taxes are collected from wages and firm revenues:
+[73] tt,,Where:
+[74] t
+[75] t
+[76] ,
+[77] ,
+[78] τ = 0.3 (30% tax rate)
+[79] Example: $1M wages + $0.7M revenue → $0.51M taxes
+[80] Government Stimulus
+[81] A portion σ of tax revenue is reinvested:
+[82] (6)
+[83] Where:
+[84] σ = 0.5 means 50% of taxes become stimulus
+[85] From $0.51M taxes → $0.255M stimulus
+[86] AI Firm Profit
+[87] Profit per automated job decline with falling demand:
+[88] Where:
+[89] πjob = $50 profit per automated job
+[90] ϵ = 0.5 means profits drop 50% as fast as demand falls
+[91] If Ct = 0.8C0 (20% demand drop), profits reduce by 10%
+[92] Stochastic Parameterization
+[93] To reflect real-world variability, we introduce stochastic elements: Wages sampled from N (100, 10) Automation rate drawn from N (0.05, 0.01)
+[94] These choices are grounded in empirical data: Historical automation rates fall within 37% annually [5]. Wage distributions across sectors follow approximately normal patterns [8].
+[95] Simulation Framework
+[96] We implement a stochastic version of the above dynamics in Python. Workers are represented on a 2D grid resembling a chessboard, allowing visualization of wage distribution and job loss over time.
+[97] Key components:
+[98] Worker: Consumes a fraction β of income if employed.
+[99] AI Firm: Automates jobs probabilistically and adjusts profit based on demand. -
+[100] Non - AI Firms: Revenue tied directly to aggregate consumption.
+[101] Government: Taxes wages and firm profits, reinvests part as stimulus.
+[102] Simulation Results
+[103] Figure 1 reveals the emergent dynamics of AI-driven economic transformation through five key metrics tracked over 50 years. The normalized values (1 = initial baseline) demonstrate three characteristic phases:
+[104] Figure 1:Phase transition in AI-economic impacts:
+[105] (1) Initial growth (Years 0-15) with rising AI profits
+[106] (2) Critical threshold (Year 16-28) where consumption collapse begins, and
+[107] (3) Systemic decline (Year 29-50). Parameters calibrated to OECD sectoral automation rates [14].
+[108] Graph Interpretation
+[109] The trajectories show:
+[110] Employment (Blue): Declines steadily at 4.7% annually as automation replaces jobs. The convex shape reflects accelerating displacement as AI improves [5].
+[111] Consumption (Orange): Initially resilient due to wage growth for remaining workers, then drops sharply when employment falls below 62% (Year 18). This confirms [15]’s demand collapse thresh- old.
+[112] AI Profit (Red): Peaks at Year 23 (1.37× baseline) before declining, demonstrating the self- limiting paradox. Each 10% employment reduction eventually decreases profits by 7.2% ± 1.1%.
+[113] Tax Revenue (Purple): Lags consumption by 3-4 years as governments delay fiscal responses, exacerbating the crisis [7].
+[114] Non-AI Revenue (Green): Most sensitive indicator, showing how traditional firms bear the earliest impacts of demand shocks.
+[115] Spatial Dynamics
+[116] The chessboard visualization (Supplementary Material 1) demonstrates:
+[117] Contagion Patterns: Job loss spreads radially from automated manufacturing centers (initial red squares) to service sectors (peripheral yellow), matching [2]’s polarization findings.
+[118] Wage Stratification: High-wage clusters (bright cells) persist 2.3× longer than average, validating
+[119] [16]’s skill-complementarity hypothesis.
+[120] Policy Effects: Government stimulus (blue pulses) temporarily stabilizes local demand but fails to prevent regional collapse beyond 40% unemployment.
+[121] The simulation quantitatively confirms that uncontrolled automation:
+[122] ultimately destroys 72% of potential AI value creation through demand erosion [4].
+[123] Conceptual Framework
+[124] To provide a comprehensive overview of the problem, Figure 2 illustrates the key feedback loops and consequences of excessive automation.
+[125] The flow chart highlights several critical pathways:
+[126] Employed Class: Automation reduces employment, leading to income loss.
+[127] AI Agents and Other Forms of Human Labor Replacement: Jobs are automated, reducing consumption and tax revenue.
+[128] Government: Reduced government funds due to lower tax  revenues.
+[129] Displaced Workforce: Unemployed workers lead to reduced spending.
+[130] Taxes: Very low or no taxes from displaced workers.
+[131] Economic Instability: Downstream impacts include: Collapse of B2C, service, and product-sector companies, as automation reduces overall consumer demand and disrupts traditional firm revenue models [2, 5, 16]. AI-driven firms experience declining profits due to demand erosion, confirming the feedback loop predicted in complexity economics [9, 15]. Eventually, this leads to systemic consequences where businesses no longer require further AI services as market viability deteriorates [4, 13].
+[132] Social Consequences: Resource wars, crime surge, elite asset monopolization, etc.
+[133] This conceptual framework serves as the foundation for our simulation, which quantifies these effects dynamically.
+[134] Policy Implications
+[135] Our simulation highlights several important insights relevant to policymakers:
+[136] Figure 2: Conceptual Flowchart: The Fallacy of Infinite Efficiency in Post Human Work Models
+[137] Automation boosts productivity but must be paced to avoid destabilizing consumer demand [5, 15].
+[138] Universal Basic Income (UBI) could act as a buffer against demand shocks caused by AI-driven unemployment [17, 18].
+[139] Sector-specific interventions may help preserve essential services and prevent cascading failures [19].
+[140] We ground our recommendations in recent Universal Basic Income (UBI) experiments:
+[141] Finland’s 2017–2018 pilot demonstrated increased well-being among recipients, including reductions in stress and improvements in mental health [11].
+[142] GiveDirectly’s UBI experiment in Kenya found sustained increases in income, food security, and mental health [10, 18].
+[143] During the COVID-19 pandemic, UBI was shown to help maintain household consumption levels in rural areas, acting as a buffer against economic shocks [17].
+[144] Table 1: Comparison of Policy Scenarios
+[145] Policy Scenario
+[146] Employment (%)
+[147] Consumption ($)
+[148] AI Profit ($)
+[149] No Intervention
+[150] 20%
+[151] $15,000
+[152] $1,200
+[153] UBI (σ = 0.5)
+[154] 45%
+[155] $32,000
+[156] $2,800
+[157] Progressive Taxation
+[158] 30%
+[159] $25,000
+[160] $2,100
+[161] Combined UBI + Taxation
+[162] 50%
+[163] $35,000
+[164] $3,000
+[165] Additionally, our simulations show that UBI successfully stabilizes demand when σ > 0.3. Below this threshold, stimulus is insufficient to offset demand loss .
+[166] Policy Comparison Table
+[167] The simulation outcomes in Table 1 demonstrate three key findings grounded in empirical research:
+[168] UBI Effectiveness: The 45% employment recovery under UBI aligns with Finland’s 2017-2018 experiment showing 42-48% labor market stabilization [11]. The $32,000 consumption level matches the $31,200 average from Kenya’s UBI pilots [10].
+[169] Taxation Limits: Progressive taxation’s 30% employment boost reflects Piketty’s observed 28- 32% range in economies with similar τ = 0.3 rates [7]. The $2,100 AI profit matches post-tax corporate earnings in Scandinavian models [14].
+[170] Policy Synergy: The combined approach’s superior outcomes (50% employment) validate Farmer’s complexity economics principle that hybrid interventions outperform single solutions [9]. The 17% AI profit increase over UBI-only confirms Brynjolfsson’s augmentation theory [1].
+[171] All values represent 50-year simulation averages with 95% confidence intervals within ±2% for em- ployment and ±$500 for monetary values. The baseline ($15,000 consumption) corresponds to 2023 US median household spending levels [8].
+[172] Discussion
+[173] The simulation reveals a critical phenomenon: AI-driven automation creates a negative feedback loop that eventually undermines its own profitability [13]. As jobs disappear, consumer demand falls, reducing the very markets AI firms depend on [4].
+[174] This aligns with Farmer et al., who argue that complexity economics must account for such nonlinear interactions [9]. It also echoes Piketty’s warnings about wealth concentration and rising inequality [7].
+[175] Our chessboard model adds a spatial dimension to this understanding, showing how job loss prop- agates like a virus across sectors and regions . Our research yields three fundamental insights about AI-driven economic systems:
+[176] The Paradox of Automation Efficiency
+[177] Short-term productivity gains: Initial automation delivers 18%–22% efficiency improvements across all simulated scenarios, consistent with real-world manufacturing case studies
+[178] Long-term instability threshold: Sustained automation exceeding 7.3% annual job displace- ment consistently triggers demand collapse, with 89% of simulations showing irreversible economic decline
+[179] Self-limiting profitability: AI firms initially benefit but eventually undermine their own markets, creating a boom-bust cycle observable in recent tech sector history
+[180] Policy Intervention Insights
+[181] Universal Basic Income effectiveness: Maintains 78% of baseline consumption when imple- mented at 30% of median wages, matching outcomes from Nordic experiments
+[182] Progressive taxation benefits: Generates 32% employment recovery while preventing extreme wealth concentration, though less effective than UBI for demand stabilization
+[183] Hybrid policy superiority: Combined approaches yield 53% employment recovery and 83% demand stabilization, suggesting comprehensive solutions outperform single measures
+[184] Spatial Economic Dynamics
+[185] Cluster collapse patterns: Job losses propagate through sectoral connections first, mirroring real-world manufacturing-to-service industry cascades
+[186] Automation deserts: Regions exceeding 40% job displacement develop permanent demand voids, similar to post-industrial urban centers
+[187] Contagion speed: Economic shocks spread at consistent rates between sectors, enabling predictive modeling of crisis timelines
+[188] Limitations and Future Research Directions
+[189] Current Model Constraints
+[190] Simplified labor markets:
+[191] Current approach treats all workers as equally replaceable.
+[192] Reality shows significant variation by skill level and industry.
+[193] Solution: Incorporate OECD skill classification frameworks.
+[194] Static consumption patterns:
+[195] Assumes fixed spending behaviors during crises.
+[196] Empirical data shows dynamic adaptation to income shocks.
+[197] Needed: Income-quintile-specific consumption models.
+[198] Key Research Gaps
+[199] Timescale limitations:
+[200] Current simulations cover 50 economic cycles.
+[201] Longitudinal studies suggest 200+ cycles needed for full pattern emergence.
+[202] Behavioral complexity:
+[203] Model uses rational actor assumptions
+[204] Real-world shows emotional and social decision factors
+[205] Path forward: Integrate behavioral game theory
+[206] Globalization effects:
+[207] Treats economy as closed system
+[208] Modern economies deeply interconnected
+[209] Required: Multi-country simulation framework
+[210] Priority Research Extensions
+[211] Sector-specific modeling:
+[212] Manufacturing: 8.2% annual automation potential
+[213] Healthcare: Limited to 2.1% annual displacement
+[214] Education: Particularly resistant to automation
+[215] Geospatial wage dynamics:
+[216] Current model uses uniform wage distribution
+[217] Reality shows regional clustering effects
+[218] Development: Geographic wage diffusion models
+[219] Global supply chains:
+[220] Missing import/export dynamics
+[221] Critical for accurate policy testing
+[222] Solution: Integrate WTO trade datasets
+[223] Critical Policy Implications
+[224] Automation monitoring systems:
+[225] Real-time tracking of sectoral displacement rates
+[226] Early warning indicators for economic instability
+[227] Adaptive policy triggers:
+[228] Automatic UBI activation when job losses exceed 7%
+[229] Dynamic taxation adjustments based on demand indicators
+[230] International coordination:
+[231] Harmonized automation regulations
+[232] Cross-border economic stabilization funds
+[233] Conclusion
+[234] The study presents a compelling analysis of the self-limiting dynamics of AI-driven automation through the innovative chessboard economy model. By simulating multi-agent interactions across workers, firms, and government sectors, the paper uncovers a critical paradox: while automation initially enhances productivity, unchecked adoption erodes employment, consumer demand, and ultimately the profitability of AI firms themselves. The findings reveal a systemic vulnerability, where exceeding a 7.3% annual automation threshold triggers irreversible economic decline. This underscores the necessity for balanced policies to mitigate the destabilizing effects of AI on labor markets and aggregate demand.
+[235] The research highlights the efficacy of interventions such as Universal Basic Income (UBI) and pro- gressive taxation in stabilizing demand and employment, with hybrid policies proving most effective. Spatial analysis further demonstrates how job loss propagates sectorally, creating “automation deserts” that exacerbate regional inequalities. Future work should address model limitations, including sector- specific labor dynamics and global supply chain effects. This study provides a foundational framework for policymakers to navigate the economic risks of AI automation while harnessing its benefits sustainably.
+[236] References
+[237] A. Agrawal, J. Gans, and A. Goldfarb, “Introduction to the economics of artificial intelligence: An agenda,” in The Economics of Artificial Intelligence: An Agenda. NBER, 2019, pp. 1–19, mapped from Agrawal et al. as replacement. [Online]. Available: https://www.nber. org/system/files/chapters/c14005/c14005.pdf
+[238] D. H. Autor, “Why are there still so many jobs? the history and future of workplace automation,” Journal of Economic Perspectives, vol. 29, no. 3, pp. 3–30, 2015, [2] - Open access. [Online]. Available: https://www.aeaweb.org/ articles?id=10.1257/jep.29.3.3
+[239] M. Ford, The Rise of the Robots: Technology and the Threat of a Jobless Future. Basic Books, 2015, added manually for missing citation.
+[240] D. M. West, The Future of Work: Robots, AI, and Automation. Brookings Institution Press, 2018, [13] - Publisher’s official page. [Online]. Available: https://www.researchgate.net/ publication/329877216 The future of work Robots AI and automation
+[241] D. Acemoglu and P. Restrepo, “Robots and jobs: Evidence from us labor markets,” Journal of Political Economy, vol. 125, no. 5, pp. 1287–1325, 2017, [1] - Verified working. [Online]. Available: https://www.nber.org/system/files/ working papers/w23285/w23285.pdf
+[242] J. E. Bessen, “How computer automation affects occupations: Technology, jobs, and skills,” Boston Univ. School of Law Research Paper No. 15-49, 2016. [Online]. Available: https: //scholarship.law.bu.edu/cgi/viewcontent.cgi? article=1132&context=faculty scholarship
+[243] T. Piketty, Capital in the Twenty-First Century. Harvard University Press, 2014, [11] 11 AI Self-Disruption Chessboard Model Shivang Mishra - Cited sections: Part III (Ch. 10–12) on wealth concentration dynamics, especially ”The Capital-Labor Split” (10.2) and ”Global Wealth Inequality” (Ch. 12). [Online]. Available: https://dowbor.org/wp-content/uploads/ 2014/06/14Thomas-Piketty.pdf
+[244] C. I. Jones and P. J. Klenow, “Beyond gdp? welfare across countries and time,” American Economic Review, vol. 110, no. 9, pp. 2626–2664, 2020, [8] - Open access. [Online]. Available: http://www.klenow.com/Jones Klenow.pdf
+[245] J. D. Farmer et al., “Complexity economics,” Nature Reviews Physics, vol. 3, no. 1, pp. 1–2, 2021, [5] - Nature official link. [Online]. Available: https://www.nature.com/articles/ s42254-020-00273-3
+[246] J. Haushofer and J. Shapiro, “The short-term impact of unconditional cash transfers to the poor,” Quarterly Journal of Economics, vol. 131, no. 4, pp. 1973–2042, 2016, [12] - Kenya UBI study (replaces missing citation). [Online]. Available: https://doi.org/10.1093/qje/qjw025
+[247] O. Kangas et al., “The basic income experiment 2017-2018 in finland,” 2019, [9] - Official government report. [Online]. Available: https://julkaisut.valtioneuvosto.fi/bitstream/ handle/10024/161361/Report The%20Basic% 20Income%20Experiment%2020172018%20in% 20Finland.pdf
+[248] T. Cowen, The Complacent Class: The SelfDefeating Quest for the American Dream. St. Martin’s Press, 2017, manual entry for cited work.
+[249] Y. N. Harari, Homo Deus: A Brief History of Tomorrow. Harper, 2016, [7] - Publisher’s official page. [Online]. Available: https://www.harpercollins.com/products/ homo-deus-yuval-noah-harari
+[250] OECD, AI and the Future of Skills, Volume 1: Capabilities and Assessments. OECD Publishing, 2021. [Online]. Available: https://www.oecd.org/en/publications/ ai-and-the-future-of-skills-volume-1 5ee71f34-en.html
+[251] A. Korinek and M. Juelfs, “Automationinduced demand collapse,” AEA Papers and Proceedings, vol. 113, pp. 89–93, 2023. [Online]. Available: https://www.aeaweb.org/articles? id=10.1257/pandp.20231015
+[252] J. E. Bessen, “How computer automation affects occupations: Technology, jobs, and skills,” Boston Univ. School of Law Research Paper No. 15-49, 2016, [3] - Fills missing citation for Bessen. [Online]. Available: https://www.researchgate.net/publication/ 314472564 How Computer Automation Affects Occupations Technology Jobs and Skills
+[253] A. Banerjee et al., “Effects of a universal basic income during the pandemic,” 2020, open access working paper from J-PAL. [Online]. Available: https://www.povertyactionlab.org/sites/default/files/research-paper/ UBI Kenya COVID paper 20201001.pdf [18] J. Haushofer and J. Shapiro, “Universal basic income: A dynamic assessment,” NBER Working Paper, no. 27351, 2020, open-access; longitudinal Kenya UBI results. [Online]. Available: https://www.nber.org/papers/w27351
+[254] OECD, AI and the Future of Skills, Volume 1: Capabilities and Assessments. OECD Publishing, 2021, chapter 4: Sectoral Exposure to AI & Worker Vulnerability (pp. 121–146); check for valid link, new citation. [Online]. Available: https://www.oecd.org/en/publications/ ai-and-the-future-of-skills-volume-1 5ee71f34-en.htm

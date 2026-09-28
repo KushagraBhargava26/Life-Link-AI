@@ -23,6 +23,7 @@ export default function BloodBankProfilePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   // Deletion states
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -40,7 +41,7 @@ export default function BloodBankProfilePage() {
     email: '',
     operating_hours: '',
     is_24_hours: false,
-    accepts_walk_in: true,
+    accepts_walk_in: false,
     license_issue_date: '',
     license_expiry_date: '',
     certificate_url: '',
@@ -72,7 +73,7 @@ export default function BloodBankProfilePage() {
         if (err.response?.status === 404) {
           setIsExisting(false);
         } else {
-          setMessage({ type: 'error', text: 'Failed to load blood bank facility profile.' });
+          setLoadError('Could not load the saved facility profile. No changes have been made.');
         }
       } finally {
         setIsLoading(false);
@@ -115,7 +116,7 @@ export default function BloodBankProfilePage() {
         const created = await bloodBankService.createProfile(payload);
         setBank(created);
         setIsExisting(true);
-        setMessage({ type: 'success', text: 'Blood bank facility registered and activated successfully!' });
+        setMessage({ type: 'success', text: 'Blood bank facility profile created. Review the verification status shown above.' });
       }
     } catch (err: any) {
       setMessage({
@@ -138,6 +139,15 @@ export default function BloodBankProfilePage() {
     );
   }
 
+  if (loadError) {
+    return (
+      <Card role="alert" className="mx-auto max-w-xl">
+        <CardHeader><CardTitle>Facility profile unavailable</CardTitle><CardDescription>{loadError}</CardDescription></CardHeader>
+        <CardContent><Button type="button" onClick={() => window.location.reload()}>Try again</Button></CardContent>
+      </Card>
+    );
+  }
+
   return (
     <div className="max-w-4xl mx-auto space-y-8 animate-fade-in">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-border pb-6">
@@ -155,7 +165,7 @@ export default function BloodBankProfilePage() {
             )}
           </div>
           <p className="text-sm text-muted-foreground">
-            Official statutory licensing credentials and emergency dispatch readiness. Complete registration activates facility operations immediately.
+            Maintain the facility details used by LifeLink AI. Verification status is returned by the service.
           </p>
         </div>
 
@@ -170,6 +180,7 @@ export default function BloodBankProfilePage() {
 
       {message && (
         <div
+          role={message.type === 'success' ? 'status' : 'alert'}
           className={`p-4 rounded-xl border text-sm ${
             message.type === 'success'
               ? 'border-success/30 bg-success-subtle text-success font-medium'

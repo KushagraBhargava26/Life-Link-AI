@@ -12,9 +12,10 @@ import asyncio
 import datetime
 import uuid
 from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.security import hash_password
+from app.core.security import hash_password, verify_password
 from app.database import get_session_factory
 from app.modules.auth.models import User, UserRole
 from app.modules.blood_bank.models import BloodBank
@@ -22,6 +23,47 @@ from app.modules.donor.models import Donor
 from app.modules.emergency.models import EmergencyRequest, EmergencyStatusEnum
 from app.modules.hospital.models import Hospital, HospitalStaff, HospitalTypeEnum
 from app.modules.inventory.models import BloodInventory, InventoryChangeEnum, InventoryHistory
+
+
+DEMO_ACCOUNT_CREDENTIALS = (
+    ("admin@lifelink.ai", "Admin@12345", "SUPER_ADMIN"),
+    ("hospital.admin@apollo.org", "Hospital@12345", "HOSPITAL_ADMIN"),
+    ("bloodbank.manager@redcross.org", "BloodBank@12345", "BLOOD_BANK_MANAGER"),
+    ("donor.rahul@example.com", "Donor@12345", "DONOR"),
+)
+
+
+async def verify_demo_accounts() -> None:
+    """Confirm the advertised demo credentials match active DB accounts."""
+    problems: list[str] = []
+    session_factory = get_session_factory()
+    async with session_factory() as session:
+        for email, password, expected_role in DEMO_ACCOUNT_CREDENTIALS:
+            stmt = (
+                select(User)
+                .options(selectinload(User.roles))
+                .where(User.email == email, User.deleted_at.is_(None))
+            )
+            user = (await session.execute(stmt)).scalar_one_or_none()
+            if user is None:
+                problems.append(f"{email}: account is missing or soft-deleted")
+                continue
+
+            if not user.is_active:
+                problems.append(f"{email}: account is inactive")
+            if not verify_password(password, user.password_hash):
+                problems.append(f"{email}: stored password differs from the advertised demo password")
+            if expected_role not in {role.role for role in user.roles}:
+                problems.append(f"{email}: expected {expected_role} role is missing")
+
+            if not any(problem.startswith(f"{email}:") for problem in problems):
+                print(f"[OK] Demo account verified: {email} ({expected_role})")
+
+    if problems:
+        raise RuntimeError(
+            "Demo account verification failed; existing accounts were not modified:\n- "
+            + "\n- ".join(problems)
+        )
 
 
 async def seed_data():
@@ -327,8 +369,9 @@ async def seed_data():
             print(f"[*] Emergency request exists: {emr_req.request_number}")
 
         await session.commit()
+        await verify_demo_accounts()
         print("=" * 60)
-        print("SEEDING COMPLETE! ALL DEMO ACCOUNTS READY:")
+        print("DEMO SEED AND DATABASE CREDENTIAL CHECK COMPLETE:")
         print("  - Admin:       admin@lifelink.ai / Admin@12345")
         print("  - Hospital:    hospital.admin@apollo.org / Hospital@12345")
         print("  - Blood Bank:  bloodbank.manager@redcross.org / BloodBank@12345")

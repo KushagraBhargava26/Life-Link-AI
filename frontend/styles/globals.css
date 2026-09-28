@@ -12,8 +12,8 @@
 @layer base {
   /* LIGHT THEME (Default :root) */
   :root {
-    --background: 210 25% 98%;      /* #f8fafc slate-50 */
-    --foreground: 222 47% 11%;      /* #0f172a slate-900 */
+    --background: 210 20% 97%;      /* #F5F7FA */
+    --foreground: 220 26% 17%;      /* #111827 */
 
     /* Card & Surfaces */
     --card: 0 0% 100%;              /* #ffffff clean white */
@@ -21,13 +21,13 @@
     --card-elevated: 210 20% 96%;   /* #f1f5f9 slate-100 */
 
     /* Borders & Inputs */
-    --border: 214 32% 90%;          /* #e2e8f0 slate-200 */
-    --input: 214 32% 86%;           /* #cbd5e1 slate-300 */
+    --border: 216 31% 89%;          /* #DCE3ED */
+    --input: 214 32% 82%;           /* input boundary */
     --ring: 350 75% 45%;            /* Crimson focus ring */
 
     /* Brand Primary — LifeLink Healthcare Crimson */
-    --primary: 350 75% 45%;         /* #c51636 */
-    --primary-hover: 350 75% 38%;
+    --primary: 351 75% 44%;         /* #C9193A */
+    --primary-hover: 351 75% 38%;
     --primary-foreground: 0 0% 100%;
 
     /* Neutral Secondary & Muted */
@@ -37,16 +37,16 @@
     --muted-foreground: 215 16% 45%;/* #64748b slate-500 */
 
     /* Status Colors */
-    --critical: 0 75% 50%;          /* #dc2626 */
+    --critical: 0 72% 40%;          /* #B91C1C */
     --critical-subtle: 0 95% 97%;   /* #fef2f2 */
-    --warning: 28 85% 50%;          /* #ea580c */
+    --warning: 29 91% 36%;          /* #B45309 */
     --warning-subtle: 35 100% 96%;  /* #fffbeb */
-    --success: 142 70% 40%;         /* #16a34a */
+    --success: 158 72% 30%;         /* #16845B */
     --success-subtle: 138 76% 96%;  /* #f0fdf4 */
-    --info: 217 91% 55%;            /* #2563eb */
+    --info: 221 83% 53%;            /* #2563EB */
     --info-subtle: 214 95% 96%;     /* #eff6ff */
 
-    --radius: 0.625rem;             /* 10px standard radius */
+    --radius: 0.75rem;
   }
 
   /* DARK THEME (.dark class) — Deep Slate/Navy Surfaces (NOT pure pitch black) */
@@ -93,6 +93,7 @@
 
   html {
     scroll-behavior: smooth;
+    color-scheme: light;
   }
 
   body {
@@ -100,13 +101,26 @@
     color: hsl(var(--foreground));
     font-feature-settings: "rlig" 1, "calt" 1;
     transition: background-color 0.2s ease, color 0.2s ease;
+    min-width: 320px;
   }
 
   /* Accessible focus outline */
   *:focus-visible {
-    outline: none;
-    ring: 2px;
-    box-shadow: 0 0 0 2px hsl(var(--background)), 0 0 0 4px hsl(var(--ring));
+    outline: 3px solid hsl(var(--ring));
+    outline-offset: 2px;
+  }
+
+  button, a, input, select, textarea { touch-action: manipulation; }
+  img, svg { max-width: 100%; }
+  :target { scroll-margin-top: 5rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }
 

@@ -28,9 +28,9 @@ export default function HospitalDashboardPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState<string | null>(null);
   const [reqForm, setReqForm] = useState({
-    blood_type: 'O-',
-    units_required: 2,
-    urgency_level: 'CRITICAL',
+    blood_type: '',
+    units_required: '',
+    urgency_level: '',
     patient_name: '',
     patient_age: '',
     notes: '',
@@ -39,6 +39,7 @@ export default function HospitalDashboardPage() {
   const loadData = useCallback(async () => {
     setIsLoading(true);
     setError(null);
+    setDashboard(null);
     try {
       const data = await hospitalService.getDashboard();
       setDashboard(data);
@@ -91,7 +92,7 @@ export default function HospitalDashboardPage() {
       }
 
       const res = await hospitalService.createEmergencyRequest(payload);
-      setSubmitSuccess(`Emergency Requisition ${res.request_number} created! Redirecting to Live Dispatch Tracker...`);
+      setSubmitSuccess(`Emergency requisition ${res.request_number} created. Opening its status page…`);
       setTimeout(() => {
         setModalOpen(false);
         setSubmitSuccess(null);
@@ -126,11 +127,11 @@ export default function HospitalDashboardPage() {
             <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
               {hospital?.name || 'Hospital Facility Operations'}
             </h1>
-            {hospital?.is_verified ? (
+            {hospital ? hospital.is_verified ? (
               <Badge variant="success" size="sm">✓ Verified Facility</Badge>
             ) : (
               <Badge variant="warning" size="sm">Verification Pending (Admin Review)</Badge>
-            )}
+            ) : <Badge variant="outline" size="sm">Status unavailable</Badge>}
           </div>
           <p className="text-sm text-muted-foreground">
             {hospital?.city}, {hospital?.state} &bull; Type: <span className="font-semibold">{hospital?.type}</span>
@@ -138,7 +139,7 @@ export default function HospitalDashboardPage() {
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3">
           <Link href="/hospital/profile">
             <Button variant="outline" size="sm">
               ⚙️ Facility Profile
@@ -148,6 +149,7 @@ export default function HospitalDashboardPage() {
             variant="danger"
             size="sm"
             onClick={() => setModalOpen(true)}
+            disabled={!hospital}
             className="shadow-sm font-bold"
           >
             + Create Blood Request
@@ -156,7 +158,7 @@ export default function HospitalDashboardPage() {
       </div>
 
       {/* Verification Notice Banner if Pending */}
-      {!hospital?.is_verified && (
+      {hospital && !hospital.is_verified && (
         <div className="p-4 rounded-xl border border-warning/40 bg-warning/10 text-xs text-foreground flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="text-base">⏳</span>
@@ -171,12 +173,14 @@ export default function HospitalDashboardPage() {
       )}
 
       {error && (
-        <div className="p-4 rounded-xl border border-critical/30 bg-critical-subtle text-critical text-sm">
-          {error}
+        <div role="alert" className="p-4 rounded-xl border border-critical/30 bg-critical-subtle text-critical text-sm flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <span>{error}</span>
+          <Button type="button" variant="outline" size="sm" onClick={() => void loadData()}>Try again</Button>
         </div>
       )}
 
       {/* Operational Metrics Cards */}
+      {dashboard && <>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="pb-2">
@@ -247,7 +251,7 @@ export default function HospitalDashboardPage() {
           <div>
             <h2 className="text-lg font-bold text-foreground">Active Clinical Requisitions</h2>
             <p className="text-xs text-muted-foreground">
-              Real-time emergency tracking for {hospital?.name}
+              Current emergency requests for {hospital?.name}
             </p>
           </div>
           <Link href="/hospital/requests">
@@ -306,14 +310,13 @@ export default function HospitalDashboardPage() {
                         </Badge>
                       </td>
                       <td className="px-4 py-3 text-xs text-muted-foreground">
-                        {r.created_at ? new Date(r.created_at).toLocaleDateString() : 'Just now'}
+                        {r.created_at ? new Date(r.created_at).toLocaleDateString() : 'Unavailable'}
                       </td>
                       <td className="px-4 py-3 text-right">
                         <div className="flex items-center justify-end gap-2">
                           <Link href={`/emergency/track/${r.request_number}`}>
                             <Button variant="danger" size="sm" className="text-xs h-7 px-2.5 font-bold shadow-sm flex items-center gap-1">
-                              <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
-                              🚑 Live GPS Track
+                              Track request
                             </Button>
                           </Link>
                           <Link href={`/hospital/requests/${r.id}/matches`}>
@@ -347,6 +350,7 @@ export default function HospitalDashboardPage() {
                 variant="danger"
                 size="sm"
                 onClick={() => setModalOpen(true)}
+                disabled={!hospital}
                 className="mt-2 font-bold"
               >
                 + Create Blood Request
@@ -355,6 +359,7 @@ export default function HospitalDashboardPage() {
           </Card>
         )}
       </div>
+      </>}
 
       {/* Create Emergency Requisition Modal */}
       <Modal
@@ -388,6 +393,7 @@ export default function HospitalDashboardPage() {
                 className="w-full h-10 px-3 rounded-lg border border-border bg-background text-foreground text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-primary"
                 required
               >
+                <option value="" disabled>Select blood group</option>
                 {['O-', 'O+', 'A-', 'A+', 'B-', 'B+', 'AB-', 'AB+'].map((t) => (
                   <option key={t} value={t}>{t}</option>
                 ))}
@@ -403,7 +409,7 @@ export default function HospitalDashboardPage() {
                 min="1"
                 max="20"
                 value={reqForm.units_required}
-                onChange={(e) => setReqForm({ ...reqForm, units_required: Number(e.target.value) })}
+                onChange={(e) => setReqForm({ ...reqForm, units_required: e.target.value })}
                 required
               />
             </div>
@@ -418,7 +424,8 @@ export default function HospitalDashboardPage() {
               onChange={(e) => setReqForm({ ...reqForm, urgency_level: e.target.value })}
               className="w-full h-10 px-3 rounded-lg border border-border bg-background text-foreground text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-primary"
               required
-            >
+              >
+              <option value="" disabled>Select urgency</option>
               <option value="CRITICAL">CRITICAL — Imminent mortality (&lt; 30 min)</option>
               <option value="HIGH">HIGH — Severe blood loss (&lt; 2 hrs)</option>
               <option value="MEDIUM">MEDIUM — Scheduled surgery / stable</option>

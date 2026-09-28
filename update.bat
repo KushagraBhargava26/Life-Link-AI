@@ -4,7 +4,7 @@ setlocal enabledelayedexpansion
 :: update.bat
 :: LifeLink AI — Updater Script
 :: Pulls latest code from GitHub, rebuilds changed Docker images,
-:: restarts all services, and re-seeds demo data.
+:: restarts all services, and adds missing demo data without deleting records.
 :: After this, run.bat works normally with zero differences.
 ::
 :: Architecture Reference: ARCHITECTURE.md Section 29
@@ -22,11 +22,11 @@ echo This will:
 echo   1. Pull the latest code from GitHub
 echo   2. Rebuild Docker images (picks up requirements.txt / code changes)
 echo   3. Restart all containers
-echo   4. Re-seed demo accounts (keeps only demo data)
+echo   4. Ensure demo accounts and sample data (preserves existing records)
 echo   5. Open your browser when everything is ready
 echo.
-echo WARNING: Any accounts or blood requests you created manually will be
-echo          removed. Only the 4 official demo accounts will remain.
+echo Existing accounts, blood requests, inventory, and other database records
+echo are preserved. Missing demo accounts and sample data are added.
 echo.
 echo Press Ctrl+C to cancel, or...
 pause
@@ -191,14 +191,14 @@ echo [OK] Nginx
 echo.
 
 :: ---------------------------------------------------------------------------
-:: Re-seed demo data (cleans non-demo accounts, keeps only official accounts)
+:: Ensure demo data additively (never purge existing accounts or operational data)
 :: ---------------------------------------------------------------------------
-echo Resetting database to official demo state...
-echo (Removes manually created accounts/requests, keeps only demo personas)
+echo Ensuring demo accounts and sample data (existing database records are preserved)...
 echo.
-docker exec lifelink-backend python scripts/reset_to_demo.py
+docker exec lifelink-backend python scripts/seed_demo_data.py
 if %ERRORLEVEL% neq 0 (
-    echo [WARN] Demo data reset had issues — check above. Continuing anyway.
+    set "ERR_REASON=Could not ensure demo accounts. Existing database records were not purged. Check the backend output above."
+    goto :error
 )
 
 :: ---------------------------------------------------------------------------
@@ -233,7 +233,7 @@ echo =======================================================================
 echo         LIFELINK AI - UPDATE COMPLETE
 echo =======================================================================
 echo.
-echo All services are running with the latest code and fresh demo data.
+echo All services are running with the latest code. Existing database records were preserved.
 echo.
 echo  Demo Accounts (use at http://localhost/admin/login):
 echo  +-----------------------+-----------------------------+------------------+
@@ -242,7 +242,7 @@ echo  +-----------------------+-----------------------------+------------------+
 echo  ^| Super Admin           ^| admin@lifelink.ai           ^| Admin@12345      ^|
 echo  ^| Hospital Admin        ^| hospital.admin@apollo.org   ^| Hospital@12345   ^|
 echo  ^| Blood Bank Manager    ^| bloodbank.manager@redcross.org ^| BloodBank@12345^|
-echo  ^| Donor (Priya Verma)   ^| priya.verma@gmail.com       ^| Priya@12345      ^|
+echo  ^| Donor (Rahul Sharma)  ^| donor.rahul@example.com    ^| Donor@12345      ^|
 echo  +-----------------------+-----------------------------+------------------+
 echo.
 echo Opening browser...

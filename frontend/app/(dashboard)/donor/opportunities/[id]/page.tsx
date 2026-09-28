@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
+import { Modal } from '@/components/ui/Modal';
 
 export default function DonorOpportunityDetailPage() {
   const params = useParams();
@@ -25,10 +26,11 @@ export default function DonorOpportunityDetailPage() {
   const [notes, setNotes] = useState<string>('');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [pendingResponse, setPendingResponse] = useState<'ACCEPTED' | 'DECLINED' | null>(null);
 
-  const fetchOpportunity = useCallback(async () => {
+  const fetchOpportunity = useCallback(async (showLoading = true) => {
     if (!requestId) return;
-    setLoading(true);
+    if (showLoading) setLoading(true);
     setErrorMessage(null);
     try {
       const resp = await donorService.getOpportunity(requestId);
@@ -66,11 +68,14 @@ export default function DonorOpportunityDetailPage() {
       if (resp.success && resp.data) {
         setSuccessMessage(
           status === 'ACCEPTED'
-            ? 'Thank you for responding to this emergency request! The hospital coordination desk has been notified.'
+            ? 'Your acceptance was recorded by the service. The hospital coordination team can review the response.'
             : 'You have declined this emergency request. Your availability remains on standby.'
         );
         // Refresh opportunity details
-        await fetchOpportunity();
+      await fetchOpportunity(false);
+      setPendingResponse(null);
+      } else {
+        setErrorMessage(resp.message || 'Your response could not be recorded. Please try again.');
       }
     } catch (err: any) {
       const msg = err.response?.data?.error?.message || 'Failed to register emergency response.';
@@ -92,9 +97,10 @@ export default function DonorOpportunityDetailPage() {
   if (errorMessage && !opportunity) {
     return (
       <div className="max-w-2xl mx-auto py-12 space-y-4">
-        <div className="rounded-lg border border-critical/40 bg-critical/10 p-4 text-xs font-semibold text-critical">
+        <div role="alert" className="rounded-lg border border-critical/40 bg-critical/10 p-4 text-sm font-medium text-critical">
           {errorMessage}
         </div>
+        <Button type="button" variant="outline" onClick={() => void fetchOpportunity()}>Try again</Button>
         <Link href="/donor">
           <Button variant="outline" size="sm">
             ← Back to Donor Dashboard
@@ -109,7 +115,7 @@ export default function DonorOpportunityDetailPage() {
   return (
     <div className="max-w-3xl mx-auto space-y-6 animate-fade-in">
       {/* Header Breadcrumb */}
-      <div className="flex items-center justify-between border-b border-border/80 pb-4">
+      <div className="flex flex-col gap-2 border-b border-border/80 pb-4 sm:flex-row sm:items-center sm:justify-between">
         <Link
           href="/donor"
           className="text-xs font-semibold text-muted-foreground hover:text-foreground flex items-center gap-1.5 transition-colors"
@@ -141,10 +147,10 @@ export default function DonorOpportunityDetailPage() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span className="text-xl">
-                  {existingResponse.status === 'ACCEPTED' ? '✅' : '⏸️'}
+                  {existingResponse.status === 'ACCEPTED' ? '✓' : existingResponse.status === 'DECLINED' ? '–' : '…'}
                 </span>
                 <CardTitle className="text-base font-bold">
-                  {existingResponse.status === 'ACCEPTED' ? 'Response Registered: Available to Donate' : 'Response Registered: Request Declined'}
+                {existingResponse.status === 'ACCEPTED' ? 'Response recorded: accepted' : existingResponse.status === 'DECLINED' ? 'Response recorded: declined' : 'Response pending'}
                 </CardTitle>
               </div>
               <Badge variant={existingResponse.status === 'ACCEPTED' ? 'success' : 'outline'}>
@@ -172,9 +178,13 @@ export default function DonorOpportunityDetailPage() {
                   </p>
                 )}
               </div>
-            ) : (
+            ) : existingResponse.status === 'DECLINED' ? (
               <p className="text-muted-foreground leading-relaxed">
                 You marked this request as declined. If your situation changes and you wish to accept, you can update your response below.
+              </p>
+            ) : (
+              <p className="text-muted-foreground leading-relaxed">
+                Your response is pending. Check this request again for an updated status.
               </p>
             )}
           </CardContent>
@@ -186,7 +196,7 @@ export default function DonorOpportunityDetailPage() {
         <CardHeader className="border-b border-border/60 pb-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <span className="h-2.5 w-2.5 rounded-full bg-critical animate-pulse" />
+              <span className="h-2.5 w-2.5 rounded-full bg-critical" />
               <Badge variant="critical">🚨 {opportunity?.urgency_level} Urgency</Badge>
             </div>
             <span className="text-xs text-muted-foreground font-medium">
@@ -194,7 +204,7 @@ export default function DonorOpportunityDetailPage() {
             </span>
           </div>
           <CardTitle className="text-xl font-bold text-foreground mt-2">
-            {opportunity?.hospital_name || 'Emergency Trauma Facility'}
+            {opportunity?.hospital_name || 'Facility name not provided'}
           </CardTitle>
           <CardDescription className="text-xs">
             📍 {opportunity?.facility_address ? `${opportunity.facility_address}, ` : ''}{opportunity?.city}
@@ -213,7 +223,7 @@ export default function DonorOpportunityDetailPage() {
                   🩸 {opportunity?.blood_type}
                 </span>
                 <span className="text-xs text-muted-foreground">
-                  (Whole Blood)
+                  ({opportunity?.component.replaceAll('_', ' ')})
                 </span>
               </div>
               <p className="text-[11px] text-muted-foreground">
@@ -238,7 +248,7 @@ export default function DonorOpportunityDetailPage() {
           <div className="pt-4 border-t border-border/60 space-y-4">
             <div>
               <label htmlFor="response-notes" className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">
-                Optional Response Note / Estimated Arrival Time
+                Optional response note (shared with the hospital if you accept)
               </label>
               <Input
                 id="response-notes"
@@ -254,7 +264,7 @@ export default function DonorOpportunityDetailPage() {
               <Button
                 variant="danger"
                 size="lg"
-                onClick={() => handleRespond('ACCEPTED')}
+                onClick={() => setPendingResponse('ACCEPTED')}
                 isLoading={submitting}
                 className="w-full sm:w-2/3 font-bold shadow-md shadow-critical/20"
               >
@@ -264,7 +274,7 @@ export default function DonorOpportunityDetailPage() {
               <Button
                 variant="outline"
                 size="lg"
-                onClick={() => handleRespond('DECLINED')}
+                onClick={() => setPendingResponse('DECLINED')}
                 isLoading={submitting}
                 className="w-full sm:w-1/3 text-xs"
               >
@@ -274,6 +284,26 @@ export default function DonorOpportunityDetailPage() {
           </div>
         </CardContent>
       </Card>
+
+      <Modal
+        isOpen={pendingResponse !== null}
+        onClose={() => { if (!submitting) setPendingResponse(null); }}
+        title={pendingResponse === 'ACCEPTED' ? 'Confirm your response' : 'Confirm decline'}
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-muted-foreground">
+            {pendingResponse === 'ACCEPTED'
+              ? `Send an acceptance for request ${opportunity?.request_number}? The existing eligibility and compatibility checks will still apply.`
+              : `Record a declined response for request ${opportunity?.request_number}?`}
+          </p>
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <Button type="button" variant="outline" onClick={() => setPendingResponse(null)} disabled={submitting}>Go back</Button>
+            <Button type="button" variant={pendingResponse === 'ACCEPTED' ? 'primary' : 'danger'} isLoading={submitting} onClick={() => pendingResponse && void handleRespond(pendingResponse)}>
+              Confirm {pendingResponse === 'ACCEPTED' ? 'acceptance' : 'decline'}
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

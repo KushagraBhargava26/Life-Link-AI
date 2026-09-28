@@ -1,21 +1,18 @@
-# backend/scripts/reset_to_demo.py
-# LifeLink AI — Database Reset to Strict 4-Account Demo State
-# Purges any stray accounts and resets to the strict 4-account configuration with active requests.
+"""Legacy command name retained for compatibility; this no longer resets data.
+
+Use ``seed_demo_data.py`` to add any missing demo fixtures. Existing users,
+facilities, requests, inventory, and history are left in place.
+"""
 
 from __future__ import annotations
 
 import asyncio
-import os
-import sys
 
-# Add backend directory to path
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-
-from scripts.seed_strict_4 import seed_strict_accounts
+from scripts.seed_demo_data import seed_data
 
 
-async def reset():
-    await seed_strict_accounts()
+async def reset() -> None:
+    await seed_data()
 
 
 if __name__ == "__main__":

@@ -19,7 +19,6 @@ interface DemoPersona {
   badge: string;
   email: string;
   pass: string;
-  targetDashboard: string;
   description: string;
 }
 
@@ -29,7 +28,6 @@ const DEMO_PERSONAS: DemoPersona[] = [
     badge: 'SUPER_ADMIN',
     email: 'admin@lifelink.ai',
     pass: 'Admin@12345',
-    targetDashboard: '/admin',
     description: 'Governance console, facility verification review, suspend/block controls.',
   },
   {
@@ -37,7 +35,6 @@ const DEMO_PERSONAS: DemoPersona[] = [
     badge: 'HOSPITAL_ADMIN',
     email: 'hospital.admin@apollo.org',
     pass: 'Hospital@12345',
-    targetDashboard: '/hospital',
     description: 'Apollo Hospital trauma center, emergency requisitions & matching engine.',
   },
   {
@@ -45,7 +42,6 @@ const DEMO_PERSONAS: DemoPersona[] = [
     badge: 'BLOOD_BANK_MANAGER',
     email: 'bloodbank.manager@redcross.org',
     pass: 'BloodBank@12345',
-    targetDashboard: '/blood-bank',
     description: 'Central Red Cross Blood Center, real inventory & emergency demand commitments.',
   },
   {
@@ -53,7 +49,6 @@ const DEMO_PERSONAS: DemoPersona[] = [
     badge: 'DONOR',
     email: 'donor.rahul@example.com',
     pass: 'Donor@12345',
-    targetDashboard: '/donor',
     description: 'Rahul Sharma (O- Universal Donor), live opportunity responses & donor profile.',
   },
 ];
@@ -79,15 +74,14 @@ export default function AdminLoginPage() {
     }
   }, [isAuthenticated, user, router]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const authenticate = async (loginEmail: string, loginPassword: string) => {
     setError(null);
     setLoading(true);
 
     try {
       const response = await authService.login({
-        email: email.trim(),
-        password,
+        email: loginEmail.trim(),
+        password: loginPassword,
       });
 
       if (response.success && response.data) {
@@ -105,10 +99,16 @@ export default function AdminLoginPage() {
     }
   };
 
-  const fillPersona = (persona: DemoPersona) => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await authenticate(email, password);
+  };
+
+  const signInPersona = async (persona: DemoPersona) => {
+    if (loading) return;
     setEmail(persona.email);
     setPassword(persona.pass);
-    setError(null);
+    await authenticate(persona.email, persona.pass);
   };
 
   return (
@@ -135,13 +135,13 @@ export default function AdminLoginPage() {
           </div>
           <CardTitle className="text-2xl font-bold tracking-tight">Admin &amp; Demo Governance Portal</CardTitle>
           <CardDescription className="text-xs text-muted-foreground">
-            Administrative oversight, institutional statutory review, and 1-click evaluation demonstration access.
+            Demo sign-in uses the same backend authentication as regular sign-in. The account, password, and active status are checked before a session is issued.
           </CardDescription>
         </CardHeader>
 
         <CardContent className="space-y-5 pt-2">
           {error && (
-            <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-xs text-red-600 dark:text-red-400 font-medium">
+              <div role="alert" aria-live="assertive" className="rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-xs text-red-600 dark:text-red-400 font-medium">
               {error}
             </div>
           )}
@@ -150,6 +150,7 @@ export default function AdminLoginPage() {
             <Input
               label="Account Email"
               type="email"
+              autoComplete="username"
               required
               placeholder="admin@lifelink.ai"
               value={email}
@@ -159,6 +160,7 @@ export default function AdminLoginPage() {
             <Input
               label="Password"
               type="password"
+              autoComplete="current-password"
               required
               placeholder="••••••••"
               value={password}
@@ -178,10 +180,14 @@ export default function AdminLoginPage() {
               </div>
               <div className="relative flex justify-center text-[10px] uppercase">
                 <span className="bg-card px-2 text-muted-foreground font-bold tracking-wider">
-                  Seeded Demo Personas (Real PostgreSQL Data)
+                  Demo credentials
                 </span>
               </div>
             </div>
+
+            <p role="note" className="text-xs leading-5 text-muted-foreground">
+              Each demo button sends that account&apos;s credentials to the login API. A session is created only when the database validates the password and the account is active.
+            </p>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
               {DEMO_PERSONAS.map((p) => (
@@ -209,9 +215,11 @@ export default function AdminLoginPage() {
                     variant="outline"
                     size="sm"
                     className="w-full text-[11px] h-7 mt-1 border-primary/30 hover:bg-primary/10 text-primary font-medium"
-                    onClick={() => fillPersona(p)}
+                    onClick={() => void signInPersona(p)}
+                    disabled={loading}
+                    isLoading={loading}
                   >
-                    Select {p.roleName}
+                    {loading ? 'Checking account…' : `Sign in as ${p.roleName}`}
                   </Button>
                 </div>
               ))}

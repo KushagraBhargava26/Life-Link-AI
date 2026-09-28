@@ -4,7 +4,7 @@
 // LifeLink AI — Hospital Emergency Requisitions Management
 // Architecture Reference: ARCHITECTURE.md Section 15, 27; API.md Section 8
 
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
@@ -20,6 +20,8 @@ export default function HospitalRequestsPage() {
   const { isAuthenticated } = useAuthStore();
   const [requests, setRequests] = useState<any[]>([]);
   const [total, setTotal] = useState(0);
+  const [offset, setOffset] = useState(0);
+  const pageSize = 50;
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -31,19 +33,19 @@ export default function HospitalRequestsPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState<string | null>(null);
   const [reqForm, setReqForm] = useState({
-    blood_type: 'O-',
-    units_required: 2,
-    urgency_level: 'CRITICAL',
+    blood_type: '',
+    units_required: '',
+    urgency_level: '',
     patient_name: '',
     patient_age: '',
     notes: '',
   });
 
-  const loadRequests = async () => {
+  const loadRequests = useCallback(async () => {
     setIsLoading(true);
-    setError(null);
+      setError(null);
     try {
-      const data = await hospitalService.getRequests({ limit: 50, offset: 0 });
+      const data = await hospitalService.getRequests({ limit: pageSize, offset });
       setRequests(data.items);
       setTotal(data.total);
     } catch (err: any) {
@@ -51,13 +53,13 @@ export default function HospitalRequestsPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [offset]);
 
   useEffect(() => {
     if (isAuthenticated) {
       loadRequests();
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, loadRequests]);
 
   const handleCreateRequest = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -78,7 +80,7 @@ export default function HospitalRequestsPage() {
       }
 
       const res = await hospitalService.createEmergencyRequest(payload);
-      setSubmitSuccess(`Emergency Requisition ${res.request_number} dispatched! Redirecting to Live Dispatch Tracker...`);
+      setSubmitSuccess(`Emergency request ${res.request_number} created. Opening its status page…`);
       setTimeout(() => {
         setModalOpen(false);
         setSubmitSuccess(null);
@@ -107,11 +109,11 @@ export default function HospitalRequestsPage() {
             <Badge variant="default" size="sm">{total} Total</Badge>
           </div>
           <p className="text-sm text-muted-foreground">
-            Complete audit and dispatch log of emergency blood requisitions for this facility.
+            Requisitions for this facility. Use the controls below to filter and browse the returned records.
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3">
           <Link href="/hospital">
             <Button variant="outline" size="sm">
               &larr; Operations Console
@@ -129,16 +131,19 @@ export default function HospitalRequestsPage() {
       </div>
 
       {error && (
-        <div className="p-4 rounded-xl border border-critical/30 bg-critical-subtle text-critical text-sm">
-          {error}
+        <div role="alert" className="p-4 rounded-xl border border-critical/30 bg-critical-subtle text-critical text-sm flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <span>{error}</span>
+          <Button type="button" variant="outline" size="sm" onClick={() => void loadRequests()} isLoading={isLoading}>Try again</Button>
         </div>
       )}
 
       {/* Filter Tabs */}
-      <div className="flex flex-wrap items-center gap-2 border-b border-border pb-3 text-xs font-semibold">
+      <div aria-label="Filter requisitions by status" className="flex flex-wrap items-center gap-2 border-b border-border pb-3 text-xs font-semibold">
         {['ALL', 'PENDING', 'MATCHING', 'CONFIRMED', 'IN_PROGRESS', 'FULFILLED', 'CANCELLED'].map((status) => (
           <button
             key={status}
+            type="button"
+            aria-pressed={statusFilter === status}
             onClick={() => setStatusFilter(status)}
             className={`px-3 py-1.5 rounded-lg transition-colors ${
               statusFilter === status
@@ -158,7 +163,7 @@ export default function HospitalRequestsPage() {
             <p className="text-sm font-medium">Loading requisitions log...</p>
           </div>
         </div>
-      ) : filteredRequests.length > 0 ? (
+      ) : error ? null : filteredRequests.length > 0 ? (
         <div className="rounded-xl border border-border bg-card overflow-hidden shadow-sm">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
@@ -207,14 +212,13 @@ export default function HospitalRequestsPage() {
                       </Badge>
                     </td>
                     <td className="px-4 py-3 text-xs text-muted-foreground">
-                      {r.created_at ? new Date(r.created_at).toLocaleString() : 'Just now'}
+                      {r.created_at ? new Date(r.created_at).toLocaleString() : 'Unavailable'}
                     </td>
                     <td className="px-4 py-3 text-right">
                         <div className="flex items-center justify-end gap-2">
                           <Link href={`/emergency/track/${r.request_number}`}>
                             <Button variant="danger" size="sm" className="text-xs h-7 px-2.5 font-bold shadow-sm flex items-center gap-1">
-                              <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
-                              🚑 Live GPS Track
+                              Track request
                             </Button>
                           </Link>
                           <Link href={`/hospital/requests/${r.id}/matches`}>
@@ -258,6 +262,16 @@ export default function HospitalRequestsPage() {
         </Card>
       )}
 
+      {!isLoading && !error && total > pageSize && (
+        <nav aria-label="Requisition pages" className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-sm text-muted-foreground">Showing {offset + 1}–{Math.min(offset + requests.length, total)} of {total}</p>
+          <div className="flex gap-2">
+            <Button type="button" variant="outline" size="sm" disabled={offset === 0} onClick={() => setOffset(Math.max(0, offset - pageSize))}>Previous</Button>
+            <Button type="button" variant="outline" size="sm" disabled={offset + pageSize >= total} onClick={() => setOffset(offset + pageSize)}>Next</Button>
+          </div>
+        </nav>
+      )}
+
       {/* Modal */}
       <Modal
         isOpen={modalOpen}
@@ -278,7 +292,9 @@ export default function HospitalRequestsPage() {
                 value={reqForm.blood_type}
                 onChange={(e) => setReqForm({ ...reqForm, blood_type: e.target.value })}
                 className="w-full h-10 px-3 rounded-lg border border-border bg-background text-foreground text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-primary"
+                required
               >
+                <option value="" disabled>Select blood group</option>
                 {['O-', 'O+', 'A-', 'A+', 'B-', 'B+', 'AB-', 'AB+'].map((t) => (
                   <option key={t} value={t}>{t}</option>
                 ))}
@@ -292,7 +308,7 @@ export default function HospitalRequestsPage() {
                 min="1"
                 max="20"
                 value={reqForm.units_required}
-                onChange={(e) => setReqForm({ ...reqForm, units_required: Number(e.target.value) })}
+                onChange={(e) => setReqForm({ ...reqForm, units_required: e.target.value })}
                 required
               />
             </div>
@@ -304,7 +320,9 @@ export default function HospitalRequestsPage() {
               value={reqForm.urgency_level}
               onChange={(e) => setReqForm({ ...reqForm, urgency_level: e.target.value })}
               className="w-full h-10 px-3 rounded-lg border border-border bg-background text-foreground text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-primary"
+              required
             >
+              <option value="" disabled>Select urgency</option>
               <option value="CRITICAL">CRITICAL — Imminent mortality (&lt; 30 min)</option>
               <option value="HIGH">HIGH — Severe blood loss (&lt; 2 hrs)</option>
               <option value="MEDIUM">MEDIUM — Scheduled surgery / stable</option>
