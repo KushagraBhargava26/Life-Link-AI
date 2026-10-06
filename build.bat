@@ -48,13 +48,22 @@ if %ERRORLEVEL% neq 0 (
 
 echo [PASS] Docker daemon is available.
 
-:: Ensure Docker CLI plugins directory has docker-compose plugin
+:: Ensure Docker CLI plugins directory has docker-compose and docker-buildx plugins
+if not exist "%USERPROFILE%\.docker\cli-plugins" mkdir "%USERPROFILE%\.docker\cli-plugins" >nul 2>&1
 if not exist "%USERPROFILE%\.docker\cli-plugins\docker-compose.exe" (
     if exist "C:\Program Files\Docker\Docker\resources\cli-plugins\docker-compose.exe" (
-        if not exist "%USERPROFILE%\.docker\cli-plugins" mkdir "%USERPROFILE%\.docker\cli-plugins" >nul 2>&1
         copy /y "C:\Program Files\Docker\Docker\resources\cli-plugins\docker-compose.exe" "%USERPROFILE%\.docker\cli-plugins\docker-compose.exe" >nul 2>&1
     )
 )
+if not exist "%USERPROFILE%\.docker\cli-plugins\docker-buildx.exe" (
+    if exist "C:\Program Files\Docker\Docker\resources\cli-plugins\docker-buildx.exe" (
+        copy /y "C:\Program Files\Docker\Docker\resources\cli-plugins\docker-buildx.exe" "%USERPROFILE%\.docker\cli-plugins\docker-buildx.exe" >nul 2>&1
+    )
+)
+
+:: Enable BuildKit
+set "DOCKER_BUILDKIT=1"
+set "COMPOSE_DOCKER_CLI_BUILD=1"
 
 :: 3. Check Compose
 set "DOCKER_COMPOSE=docker compose"

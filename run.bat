@@ -39,11 +39,16 @@ if %ERRORLEVEL% neq 0 (
     goto :error
 )
 
-:: Ensure Docker CLI plugins directory has docker-compose plugin
+:: Ensure Docker CLI plugins directory has docker-compose and docker-buildx plugins
+if not exist "%USERPROFILE%\.docker\cli-plugins" mkdir "%USERPROFILE%\.docker\cli-plugins" >nul 2>&1
 if not exist "%USERPROFILE%\.docker\cli-plugins\docker-compose.exe" (
     if exist "C:\Program Files\Docker\Docker\resources\cli-plugins\docker-compose.exe" (
-        if not exist "%USERPROFILE%\.docker\cli-plugins" mkdir "%USERPROFILE%\.docker\cli-plugins" >nul 2>&1
         copy /y "C:\Program Files\Docker\Docker\resources\cli-plugins\docker-compose.exe" "%USERPROFILE%\.docker\cli-plugins\docker-compose.exe" >nul 2>&1
+    )
+)
+if not exist "%USERPROFILE%\.docker\cli-plugins\docker-buildx.exe" (
+    if exist "C:\Program Files\Docker\Docker\resources\cli-plugins\docker-buildx.exe" (
+        copy /y "C:\Program Files\Docker\Docker\resources\cli-plugins\docker-buildx.exe" "%USERPROFILE%\.docker\cli-plugins\docker-buildx.exe" >nul 2>&1
     )
 )
 
@@ -63,29 +68,17 @@ if not exist ".env" (
     goto :error
 )
 
-:: Step 3 — Pull required images (with retry for slow connections)
-set "COMPOSE_HTTP_TIMEOUT=300"
-set "DOCKER_CLIENT_TIMEOUT=300"
-echo Pulling required Docker images (this may take a few minutes on first run)...
-
+:: Step 3 — Ensure required base images exist (pull only if missing locally)
 set "PULL_IMAGES=nginx:alpine redis:7-alpine postgis/postgis:15-3.3-alpine"
 for %%I in (%PULL_IMAGES%) do (
-    set "PULL_OK=0"
-    for /L %%A in (1,1,3) do (
-        if "!PULL_OK!"=="0" (
-            echo [Attempt %%A/3] Pulling %%I ...
-            docker pull %%I
-            if !ERRORLEVEL! equ 0 (
-                set "PULL_OK=1"
-                echo [OK] %%I pulled successfully.
-            ) else (
-                echo [WARN] Pull attempt %%A failed. Retrying...
-            )
+    docker image inspect %%I >nul 2>nul
+    if !ERRORLEVEL! neq 0 (
+        echo Downloading missing image %%I ...
+        docker pull %%I
+        if !ERRORLEVEL! neq 0 (
+            set "ERR_REASON=Failed to pull image %%I. Check your internet connection and try again."
+            goto :error
         )
-    )
-    if "!PULL_OK!"=="0" (
-        set "ERR_REASON=Failed to pull image %%I after 3 attempts. Check your internet connection and try again."
-        goto :error
     )
 )
 

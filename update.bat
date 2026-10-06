@@ -61,13 +61,22 @@ if %ERRORLEVEL% neq 0 (
     goto :error
 )
 
-:: Ensure Docker CLI plugins directory has docker-compose plugin
+:: Ensure Docker CLI plugins directory has docker-compose and docker-buildx plugins
+if not exist "%USERPROFILE%\.docker\cli-plugins" mkdir "%USERPROFILE%\.docker\cli-plugins" >nul 2>&1
 if not exist "%USERPROFILE%\.docker\cli-plugins\docker-compose.exe" (
     if exist "C:\Program Files\Docker\Docker\resources\cli-plugins\docker-compose.exe" (
-        if not exist "%USERPROFILE%\.docker\cli-plugins" mkdir "%USERPROFILE%\.docker\cli-plugins" >nul 2>&1
         copy /y "C:\Program Files\Docker\Docker\resources\cli-plugins\docker-compose.exe" "%USERPROFILE%\.docker\cli-plugins\docker-compose.exe" >nul 2>&1
     )
 )
+if not exist "%USERPROFILE%\.docker\cli-plugins\docker-buildx.exe" (
+    if exist "C:\Program Files\Docker\Docker\resources\cli-plugins\docker-buildx.exe" (
+        copy /y "C:\Program Files\Docker\Docker\resources\cli-plugins\docker-buildx.exe" "%USERPROFILE%\.docker\cli-plugins\docker-buildx.exe" >nul 2>&1
+    )
+)
+
+:: Enable BuildKit fast layer caching
+set "DOCKER_BUILDKIT=1"
+set "COMPOSE_DOCKER_CLI_BUILD=1"
 
 :: Resolve Compose command (docker compose vs docker-compose)
 set "DOCKER_COMPOSE=docker compose"
@@ -120,12 +129,11 @@ if %ERRORLEVEL% neq 0 (
 echo [OK] Containers stopped.
 
 :: ---------------------------------------------------------------------------
-:: Step 4 — Rebuild all custom images (picks up any code / requirements changes)
+:: Step 4 — Rebuild changed layers (uses BuildKit cache so unchanged layers take 0s)
 :: ---------------------------------------------------------------------------
 echo.
-echo [4/6] Rebuilding Docker images (this may take several minutes)...
-echo       This step ensures requirements.txt, Dockerfile, and code changes
-echo       are fully applied to all services.
+echo [4/6] Checking for code / dependency changes and building...
+echo       (Reuses cached packages; only newly modified files are updated)
 echo.
 
 set "COMPOSE_HTTP_TIMEOUT=300"
@@ -142,30 +150,26 @@ if %ERRORLEVEL% neq 0 (
     )
 )
 echo.
-echo [OK] All Docker images rebuilt successfully.
+echo [OK] Docker images verified and up to date.
 
 :: ---------------------------------------------------------------------------
-:: Step 5 — Pull base images with retry (nginx, redis, postgis)
+:: Step 5 — Verify required base images (pull only if missing locally)
 :: ---------------------------------------------------------------------------
 echo.
-echo [5/6] Pulling required base images...
+echo [5/6] Verifying base images...
 set "PULL_IMAGES=nginx:alpine redis:7-alpine postgis/postgis:15-3.3-alpine"
 for %%I in (%PULL_IMAGES%) do (
-    set "PULL_OK=0"
-    for /L %%A in (1,1,3) do (
-        if "!PULL_OK!"=="0" (
-            echo [Attempt %%A/3] Pulling %%I ...
-            docker pull %%I
-            if !ERRORLEVEL! equ 0 (
-                set "PULL_OK=1"
-                echo [OK] %%I pulled successfully.
-            ) else (
-                echo [WARN] Pull attempt %%A failed. Retrying...
-            )
+    docker image inspect %%I >nul 2>nul
+    if !ERRORLEVEL! equ 0 (
+        echo [OK] %%I already cached locally.
+    ) else (
+        echo Downloading missing base image %%I ...
+        docker pull %%I
+        if !ERRORLEVEL! neq 0 (
+            echo [WARN] Could not pull %%I. Will continue if available.
+        ) else (
+            echo [OK] %%I downloaded successfully.
         )
-    )
-    if "!PULL_OK!"=="0" (
-        echo [WARN] Could not pull %%I after 3 attempts. Will use cached version if available.
     )
 )
 
