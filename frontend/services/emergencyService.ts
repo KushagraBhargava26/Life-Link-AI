@@ -38,6 +38,39 @@ export const emergencyService = {
     const response = await api.get(`/emergency/${encodeURIComponent(idOrNumber)}/status`);
     return response.data;
   },
+
+  /**
+   * Get the latest GPS vehicle location for a request (Phase 1.8 telemetry)
+   */
+  async getLocation(idOrNumber: string): Promise<{
+    success: boolean;
+    data: {
+      id: string;
+      request_id: string;
+      latitude: number;
+      longitude: number;
+      heading?: number;
+      speed_kmh?: number;
+      status_note?: string;
+      recorded_at: string;
+    } | null;
+    message: string;
+  }> {
+    const response = await api.get(`/emergency/${encodeURIComponent(idOrNumber)}/location`);
+    return response.data;
+  },
+
+  /**
+   * Broadcast shortage to external voluntary donors and blood banks
+   */
+  async escalateRequest(idOrNumber: string, reason?: string): Promise<ApiSuccessResponse<EmergencyRequestData>> {
+    const response = await api.post<ApiSuccessResponse<EmergencyRequestData>>(
+      `/emergency/${encodeURIComponent(idOrNumber)}/escalate`,
+      {},
+      { params: reason ? { reason } : undefined }
+    );
+    return response.data;
+  },
 };
 
 export default emergencyService;

@@ -35,15 +35,15 @@ export default function BloodBankDashboardPage() {
 
   // Edit stock modal state
   const [editingItem, setEditingItem] = useState<BloodInventoryItem | null>(null);
-  const [editUnits, setEditUnits] = useState<number>(0);
-  const [editThreshold, setEditThreshold] = useState<number>(5);
+  const [editUnits, setEditUnits] = useState<number | string>(0);
+  const [editThreshold, setEditThreshold] = useState<number | string>(5);
   const [editExpiry, setEditExpiry] = useState<string>('');
   const [editReason, setEditReason] = useState<string>('');
   const [isUpdating, setIsUpdating] = useState(false);
 
   // Respond to Emergency modal state
   const [respondingReq, setRespondingReq] = useState<import('@/types').EmergencyDemandItem | null>(null);
-  const [commitUnits, setCommitUnits] = useState<number>(1);
+  const [commitUnits, setCommitUnits] = useState<number | string>(1);
   const [commitMessage, setCommitMessage] = useState<string>('');
   const [isResponding, setIsResponding] = useState(false);
 
@@ -406,6 +406,7 @@ export default function BloodBankDashboardPage() {
                     <th className="py-3 px-4">Hospital Destination</th>
                     <th className="py-3 px-4">Blood Needed</th>
                     <th className="py-3 px-4">Units Required</th>
+                    <th className="py-3 px-4">Status</th>
                     <th className="py-3 px-4">Urgency</th>
                     <th className="py-3 px-4">Your Compatible Availability</th>
                     <th className="py-3 px-4 text-right">Action</th>
@@ -429,6 +430,17 @@ export default function BloodBankDashboardPage() {
                         </td>
                         <td className="py-3 px-4 font-semibold text-foreground">
                           {req.units_required} units
+                        </td>
+                        <td className="py-3 px-4">
+                          {(req as any).has_accepted_donor || req.status === 'IN_PROGRESS' ? (
+                            <Badge variant="success" size="sm">
+                              ✅ Donor Accepted
+                            </Badge>
+                          ) : (
+                            <Badge variant="warning" size="sm">
+                              Shortage Broadcast
+                            </Badge>
+                          )}
                         </td>
                         <td className="py-3 px-4">
                           <Badge
@@ -536,7 +548,10 @@ export default function BloodBankDashboardPage() {
               type="number"
               min="0"
               value={editUnits}
-              onChange={(e) => setEditUnits(parseInt(e.target.value) || 0)}
+              onChange={(e) => {
+                const val = e.target.value;
+                setEditUnits(val === '' ? '' : parseInt(val, 10));
+              }}
               required
               helperText="Enter the current unit count recorded for this blood group."
             />
@@ -546,7 +561,10 @@ export default function BloodBankDashboardPage() {
               type="number"
               min="0"
               value={editThreshold}
-              onChange={(e) => setEditThreshold(parseInt(e.target.value) || 0)}
+              onChange={(e) => {
+                const val = e.target.value;
+                setEditThreshold(val === '' ? '' : parseInt(val, 10));
+              }}
               required
               helperText="Alert threshold below which a low-stock notice is triggered."
             />
@@ -617,7 +635,10 @@ export default function BloodBankDashboardPage() {
               min="1"
               max={availabilities[respondingReq.id]?.total_compatible_units || respondingReq.units_required}
               value={commitUnits}
-              onChange={(e) => setCommitUnits(parseInt(e.target.value) || 1)}
+              onChange={(e) => {
+                const val = e.target.value;
+                setCommitUnits(val === '' ? '' : parseInt(val, 10));
+              }}
               required
               helperText="The selected quantity will be submitted as a stock commitment for this request."
             />

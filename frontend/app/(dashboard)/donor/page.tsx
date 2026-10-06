@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
+import { LocationDetector } from '@/components/ui/LocationDetector';
 
 export default function DonorDashboardPage() {
   const { user } = useAuthStore();
@@ -31,6 +32,8 @@ export default function DonorDashboardPage() {
   const [city, setCity] = useState('');
   const [state, setState] = useState('');
   const [pincode, setPincode] = useState('');
+  const [latitude, setLatitude] = useState<number | null>(null);
+  const [longitude, setLongitude] = useState<number | null>(null);
   const [weightKg, setWeightKg] = useState('');
   const [gender, setGender] = useState('');
   const [isAvailable, setIsAvailable] = useState(false);
@@ -54,6 +57,8 @@ export default function DonorDashboardPage() {
           setCity(resp.data.profile.city);
           if (resp.data.profile.state) setState(resp.data.profile.state);
           if (resp.data.profile.pincode) setPincode(resp.data.profile.pincode);
+          if (resp.data.profile.latitude != null) setLatitude(resp.data.profile.latitude);
+          if (resp.data.profile.longitude != null) setLongitude(resp.data.profile.longitude);
           if (resp.data.profile.weight_kg) setWeightKg(String(resp.data.profile.weight_kg));
           if (resp.data.profile.gender) setGender(resp.data.profile.gender);
         }
@@ -134,6 +139,8 @@ export default function DonorDashboardPage() {
         city: city.trim(),
         state: state.trim(),
         pincode: pincode.trim(),
+        latitude: latitude ?? undefined,
+        longitude: longitude ?? undefined,
         weight_kg: weightNum,
         gender: gender || undefined,
         is_available: profile ? profile.is_available : isAvailable,
@@ -253,6 +260,19 @@ export default function DonorDashboardPage() {
                     <option value="MALE">Male</option><option value="FEMALE">Female</option><option value="OTHER">Other</option><option value="PREFER_NOT_TO_SAY">Prefer not to say</option>
                   </select>
                 </div>
+                <div className="sm:col-span-2 pb-1">
+                  <LocationDetector
+                    currentCoordinates={{ latitude, longitude }}
+                    onLocationDetected={(loc) => {
+                      if (loc.city) setCity(loc.city);
+                      if (loc.state) setState(loc.state);
+                      if (loc.pincode) setPincode(loc.pincode);
+                      setLatitude(loc.latitude);
+                      setLongitude(loc.longitude);
+                    }}
+                  />
+                </div>
+
                 <div><label htmlFor="donor-city" className="mb-1.5 block text-sm font-medium text-foreground">City <span aria-hidden="true" className="text-critical">*</span></label><Input id="donor-city" autoComplete="address-level2" value={city} onChange={(e) => setCity(e.target.value)} placeholder="Your city" required /></div>
                 <div><label htmlFor="donor-state" className="mb-1.5 block text-sm font-medium text-foreground">State <span aria-hidden="true" className="text-critical">*</span></label><Input id="donor-state" autoComplete="address-level1" value={state} onChange={(e) => setState(e.target.value)} placeholder="Your state" required /></div>
                 <div><label htmlFor="donor-pincode" className="mb-1.5 block text-sm font-medium text-foreground">PIN code <span aria-hidden="true" className="text-critical">*</span></label><Input id="donor-pincode" inputMode="numeric" autoComplete="postal-code" value={pincode} onChange={(e) => setPincode(e.target.value)} placeholder="Your PIN code" required /></div>
@@ -506,6 +526,11 @@ export default function DonorDashboardPage() {
                         <div className="flex items-center gap-1.5 font-medium">
                           <span>📍</span>
                           <span>{opp.city}</span>
+                          {opp.distance_km != null && (
+                            <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-primary/10 text-primary border border-primary/20">
+                              {opp.distance_km} km away
+                            </span>
+                          )}
                         </div>
                         <span className="text-[11px]">
                           Compatible with Type {profile?.blood_type}

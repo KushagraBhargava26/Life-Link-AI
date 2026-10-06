@@ -36,10 +36,9 @@ export default function HospitalDashboardPage() {
     notes: '',
   });
 
-  const loadData = useCallback(async () => {
-    setIsLoading(true);
+  const loadData = useCallback(async (silent = false) => {
+    if (!silent) setIsLoading(true);
     setError(null);
-    setDashboard(null);
     try {
       const data = await hospitalService.getDashboard();
       setDashboard(data);
@@ -50,13 +49,15 @@ export default function HospitalDashboardPage() {
       }
       setError(err.response?.data?.error?.message || 'Failed to load hospital operational data.');
     } finally {
-      setIsLoading(false);
+      if (!silent) setIsLoading(false);
     }
   }, [router]);
 
   useEffect(() => {
     if (isAuthenticated) {
       loadData();
+      const intervalId = window.setInterval(() => void loadData(true), 15_000);
+      return () => window.clearInterval(intervalId);
     }
   }, [isAuthenticated, loadData]);
 

@@ -176,6 +176,8 @@ export interface CreateEmergencyPayload {
   urgency_level: string;
   hospital_name?: string;
   city: string;
+  latitude?: number | null;
+  longitude?: number | null;
   patient_name?: string;
   patient_age?: number;
   notes?: string;
@@ -264,6 +266,8 @@ export interface HospitalCreateData {
   city: string;
   state: string;
   pincode: string;
+  latitude?: number | null;
+  longitude?: number | null;
   phone: string;
   email?: string;
   website?: string;
@@ -283,6 +287,8 @@ export interface HospitalUpdateData {
   city?: string;
   state?: string;
   pincode?: string;
+  latitude?: number | null;
+  longitude?: number | null;
   phone?: string;
   email?: string;
   website?: string;
@@ -352,6 +358,8 @@ export interface BloodBankCreateData {
   city: string;
   state: string;
   pincode: string;
+  latitude?: number | null;
+  longitude?: number | null;
   phone: string;
   email?: string;
   operating_hours?: string;
@@ -370,6 +378,8 @@ export interface BloodBankUpdateData {
   city?: string;
   state?: string;
   pincode?: string;
+  latitude?: number | null;
+  longitude?: number | null;
   phone?: string;
   email?: string;
   operating_hours?: string;

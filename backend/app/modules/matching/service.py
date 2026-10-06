@@ -536,7 +536,10 @@ class MatchingService:
         """Retrieves the latest match run for an emergency request."""
         run = await self.repo.get_latest_run_for_request(emergency_request_id)
         if not run:
-            return None
+            try:
+                return await self.execute_matching(emergency_request_id)
+            except Exception:
+                return None
 
         # Fetch emergency request to get requested blood type
         req_stmt = select(EmergencyRequest).where(EmergencyRequest.id == emergency_request_id)
@@ -642,6 +645,59 @@ class MatchingService:
                         is_compatible=True,
                     )
                 )
+
+        # Inject ANY donor who accepted this emergency request (even if not in original match run)
+        try:
+            seen_donor_ids = {item.candidate_id for item in donor_items}
+            accepted_responses_stmt = select(DonorEmergencyResponse).where(
+                DonorEmergencyResponse.emergency_request_id == run.emergency_request_id,
+                DonorEmergencyResponse.status == "ACCEPTED",
+                DonorEmergencyResponse.deleted_at.is_(None),
+            )
+            accepted_responses = (await self.db.execute(accepted_responses_stmt)).scalars().all()
+            for a_resp in accepted_responses:
+                d_id_str = str(a_resp.donor_id)
+                if d_id_str not in seen_donor_ids:
+                    d_stmt = select(Donor).where(Donor.id == a_resp.donor_id)
+                    d_res = await self.db.execute(d_stmt)
+                    d_obj = d_res.scalar_one_or_none()
+                    if d_obj:
+                        short = d_id_str.split("-")[0].upper()
+                        d_name = f"Donor #{short}"
+                        try:
+                            from app.modules.auth.models import User as UserModel
+                            u_stmt = select(UserModel).where(UserModel.id == d_obj.user_id)
+                            u_obj = (await self.db.execute(u_stmt)).scalar_one_or_none()
+                            if u_obj and (u_obj.first_name or u_obj.last_name):
+                                d_name = f"{u_obj.first_name or ''} {u_obj.last_name or ''}".strip()
+                        except Exception:
+                            pass
+
+                        loc = f"{d_obj.city} (Direct Accepted)"
+                        accepted_cand = MatchCandidateResponseSchema(
+                            id=uuid.uuid4(),
+                            rank=0,
+                            candidate_type="DONOR",
+                            candidate_id=d_id_str,
+                            name=d_name,
+                            blood_type=d_obj.blood_type,
+                            compatibility_score=1.0,
+                            proximity_score=1.0,
+                            availability_score=1.0,
+                            ai_score=None,
+                            total_score=1.0,
+                            distance_km=None,
+                            units_available=1,
+                            status="PROPOSED",
+                            donor_response_status="ACCEPTED",
+                            explanation=["Accepted emergency requisition via donor portal"],
+                            location_display=loc,
+                            is_compatible=True,
+                        )
+                        donor_items.insert(0, accepted_cand)
+                        seen_donor_ids.add(d_id_str)
+        except Exception as e:
+            logger.warning("inject_accepted_donors_failed", error=str(e))
 
         return MatchRunResponseSchema(
             id=run.id,

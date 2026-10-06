@@ -175,6 +175,40 @@ async def create_hospital_emergency_request(
     }
 
 
+@router.post(
+    "/me/requests/{request_id}/escalate",
+    response_model=dict[str, Any],
+    status_code=status.HTTP_200_OK,
+    summary="Escalate Requisition (Broadcast Shortage to External Donors & Blood Banks)",
+)
+async def escalate_hospital_emergency_request(
+    request_id: str,
+    current_user: User = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db),
+) -> dict[str, Any]:
+    """
+    Hospital marks internal blood shortage and broadcasts the emergency requisition
+    to external voluntary donors and blood banks.
+    """
+    from app.modules.emergency.service import EmergencyService
+    emergency_service = EmergencyService(db)
+    updated_req = await emergency_service.escalate_request(
+        identifier=request_id,
+        user_id=current_user.id,
+    )
+    return {
+        "success": True,
+        "message": "Emergency requisition escalated to external donors and blood banks.",
+        "data": {
+            "id": str(updated_req.id),
+            "request_number": updated_req.request_number,
+            "status": updated_req.status,
+            "notes": updated_req.notes,
+        },
+    }
+
+
+
 @router.get(
     "",
     response_model=dict[str, Any],

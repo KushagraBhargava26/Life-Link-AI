@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/Button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Badge } from '@/components/ui/Badge';
+import { LocationDetector } from '@/components/ui/LocationDetector';
 
 export default function DonorProfilePage() {
   const router = useRouter();
@@ -36,6 +37,8 @@ export default function DonorProfilePage() {
   const [city, setCity] = useState('');
   const [state, setState] = useState('');
   const [pincode, setPincode] = useState('');
+  const [latitude, setLatitude] = useState<number | null>(null);
+  const [longitude, setLongitude] = useState<number | null>(null);
   const [isAvailable, setIsAvailable] = useState(true);
 
   // Deletion states
@@ -64,6 +67,8 @@ export default function DonorProfilePage() {
         setCity(p.city || '');
         setState(p.state || '');
         setPincode(p.pincode || '');
+        setLatitude(p.latitude ?? null);
+        setLongitude(p.longitude ?? null);
         setWeightKg(p.weight_kg != null ? String(p.weight_kg) : '');
         setDateOfBirth(p.date_of_birth ? p.date_of_birth.split('T')[0] : '');
         setGender(p.gender || '');
@@ -100,6 +105,8 @@ export default function DonorProfilePage() {
         city,
         state,
         pincode,
+        latitude: latitude ?? undefined,
+        longitude: longitude ?? undefined,
         weight_kg: Number(weightKg),
         date_of_birth: dateOfBirth || undefined,
         gender: gender || undefined,
@@ -267,6 +274,20 @@ export default function DonorProfilePage() {
                 <label htmlFor="profile-weight" className="text-sm font-medium mb-1 block">Weight (kg)</label>
                 <Input id="profile-weight" type="number" min="45" max="250" value={weightKg} onChange={(e) => setWeightKg(e.target.value)} required />
               </div>
+              <div className="md:col-span-2 pb-1 pt-1">
+                <LocationDetector
+                  currentCoordinates={{ latitude, longitude }}
+                  onLocationDetected={(loc) => {
+                    if (loc.address_line) setAddressLine(loc.address_line);
+                    if (loc.city) setCity(loc.city);
+                    if (loc.state) setState(loc.state);
+                    if (loc.pincode) setPincode(loc.pincode);
+                    setLatitude(loc.latitude);
+                    setLongitude(loc.longitude);
+                  }}
+                />
+              </div>
+
               <div className="md:col-span-2">
                 <label htmlFor="profile-address" className="text-sm font-medium mb-1 block">Address line</label>
                 <Input id="profile-address" autoComplete="street-address" value={addressLine} onChange={(e) => setAddressLine(e.target.value)} />

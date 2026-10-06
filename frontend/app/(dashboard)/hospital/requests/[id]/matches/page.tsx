@@ -11,6 +11,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { emergencyService } from '@/services/emergencyService';
+import { hospitalService } from '@/services/hospitalService';
 import { matchingService } from '@/services/matchingService';
 import { EmergencyRequestData, MatchRun, MatchCandidate, MatchCandidateStatus } from '@/types';
 
@@ -24,6 +25,7 @@ export default function HospitalMatchingWorkspacePage() {
   const [searchRadius, setSearchRadius] = useState<number>(50.0);
   const [isLoadingRequest, setIsLoadingRequest] = useState<boolean>(true);
   const [isMatchingRunning, setIsMatchingRunning] = useState<boolean>(false);
+  const [isEscalating, setIsEscalating] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [actionMessage, setActionMessage] = useState<string | null>(null);
 
@@ -102,6 +104,26 @@ export default function HospitalMatchingWorkspacePage() {
       }
     } catch (err: any) {
       setError(err?.response?.data?.error?.message || 'Failed to update candidate status.');
+    }
+  };
+
+  const handleEscalateRequest = async () => {
+    if (!requestId) return;
+    try {
+      setIsEscalating(true);
+      setError(null);
+      const res = await hospitalService.escalateRequest(requestId);
+      if (res.success) {
+        setActionMessage('In-house blood shortage confirmed! Requisition escalated and broadcasted to voluntary donors & blood banks.');
+        await fetchRequestDetails();
+        await fetchMatches(searchRadius);
+      } else {
+        setError(res.message || 'Failed to broadcast shortage.');
+      }
+    } catch (err: any) {
+      setError(err?.response?.data?.error?.message || 'Failed to broadcast shortage to external donors.');
+    } finally {
+      setIsEscalating(false);
     }
   };
 
@@ -188,9 +210,43 @@ export default function HospitalMatchingWorkspacePage() {
       {acceptedDonors.length > 0 && (
         <div className="p-4 bg-success-subtle border border-success text-success-foreground font-bold rounded-xl text-sm space-y-1">
           {acceptedDonors.map(d => (
-            <div key={d.id}>✅ {d.name} has accepted this request. Please shortlist them to proceed.</div>
+            <div key={d.id} className="flex items-center justify-between">
+              <span>✅ <strong>{d.name}</strong> ({d.blood_type}) has accepted this emergency request.</span>
+              <span className="text-xs bg-success text-success-foreground px-2 py-0.5 rounded font-bold">Donor Accepted</span>
+            </div>
           ))}
         </div>
+      )}
+
+      {/* Hospital Triage: In-House Review & Escalation Card */}
+      {request?.status === 'PENDING' && (
+        <Card className="border-warning/40 bg-warning/5 shadow-sm">
+          <CardContent className="p-5">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-xl">🏥</span>
+                  <h3 className="text-base font-bold text-foreground">
+                    Hospital In-House Triage Phase
+                  </h3>
+                  <Badge variant="warning" size="sm">Internal Intake</Badge>
+                </div>
+                <p className="text-sm text-muted-foreground max-w-2xl">
+                  This requisition is currently routed to the hospital first. Evaluate internal hospital blood storage before disturbing community donors. If your facility lacks the required units of <span className="font-bold text-primary">{request.blood_type}</span>, broadcast this shortage to voluntary donors and blood banks below.
+                </p>
+              </div>
+              <Button
+                variant="danger"
+                size="md"
+                onClick={handleEscalateRequest}
+                isLoading={isEscalating}
+                className="whitespace-nowrap font-bold shadow-md flex items-center gap-2"
+              >
+                ⚠️ We Lack Stock — Broadcast to Donors & Blood Banks
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       )}
 
       {/* Requisition Overview Banner */}

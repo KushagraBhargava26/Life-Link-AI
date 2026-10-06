@@ -45,6 +45,32 @@ class EmergencyService:
         now = datetime.datetime.now(datetime.timezone.utc)
         year = now.year
 
+        # Auto-resolve hospital_id if not explicitly provided
+        hospital_id = data.hospital_id
+        if not hospital_id:
+            try:
+                from sqlalchemy import select
+                from app.modules.hospital.models import Hospital
+
+                h_stmt = select(Hospital).where(Hospital.deleted_at.is_(None))
+                if data.hospital_name:
+                    h_stmt_name = h_stmt.where(Hospital.name.ilike(f"%{data.hospital_name.strip()}%"))
+                    h_match = (await self.db.execute(h_stmt_name)).scalars().first()
+                    if h_match:
+                        hospital_id = h_match.id
+                if not hospital_id and data.city:
+                    h_stmt_city = h_stmt.where(Hospital.city.ilike(f"%{data.city.strip()}%"))
+                    h_match = (await self.db.execute(h_stmt_city)).scalars().first()
+                    if h_match:
+                        hospital_id = h_match.id
+                if not hospital_id:
+                    # Pick default active hospital so request is immediately visible in hospital queue
+                    h_match = (await self.db.execute(h_stmt)).scalars().first()
+                    if h_match:
+                        hospital_id = h_match.id
+            except Exception as e:
+                logger.warning("hospital_auto_resolve_failed", error=str(e))
+
         # Generate human-readable sequence number: EMR-{year}-{seq:04d} with collision retry
         for attempt in range(5):
             count = await self.repository.get_count_for_year(year)
@@ -62,7 +88,7 @@ class EmergencyService:
                 units_fulfilled=0,
                 urgency_level=data.urgency_level,
                 hospital_name=data.hospital_name,
-                hospital_id=data.hospital_id,
+                hospital_id=hospital_id,
                 facility_address=data.facility_address,
                 city=data.city,
                 latitude=data.latitude,
@@ -159,3 +185,47 @@ class EmergencyService:
         await self.db.refresh(req)
         logger.info("emergency_request_status_updated", request_id=str(req.id), status=clean_status)
         return req
+
+    async def escalate_request(
+        self,
+        identifier: str,
+        user_id: Optional[uuid.UUID] = None,
+        reason: Optional[str] = None,
+    ) -> EmergencyRequest:
+        """
+        Escalates an emergency request from internal hospital triage (PENDING) to external matching (MATCHING)
+        when the hospital indicates a lack of in-house blood inventory.
+        Broadcasts to voluntary individual donors and blood banks.
+        """
+        req = await self.get_request(identifier)
+        req.status = EmergencyStatusEnum.MATCHING.value
+        now_str = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+        reason_msg = f": {reason}" if reason else ""
+        escalation_note = f"[Escalated {now_str} (Hospital shortage reported{reason_msg}) - Broadcasted to external donors & blood banks]"
+        if req.notes:
+            req.notes = f"{req.notes}\n{escalation_note}"
+        else:
+            req.notes = escalation_note
+
+        await self.db.commit()
+        await self.db.refresh(req)
+
+        # Trigger matching engine automatically so candidates are immediately prepared
+        try:
+            from app.modules.matching.service import MatchingService
+            matching_service = MatchingService(self.db)
+            await matching_service.execute_matching(
+                emergency_request_id=req.id,
+                user_id=user_id,
+            )
+        except Exception as exc:
+            logger.warning("auto_matching_on_escalation_failed", error=str(exc), request_id=str(req.id))
+
+        logger.info(
+            "emergency_request_escalated_to_external",
+            request_id=str(req.id),
+            request_number=req.request_number,
+            status=req.status,
+        )
+        return req
+

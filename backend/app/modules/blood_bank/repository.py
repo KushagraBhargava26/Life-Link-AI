@@ -93,12 +93,13 @@ class BloodBankRepository:
     ) -> tuple[list[EmergencyRequest], int]:
         """Retrieve active emergency requests requiring blood in the city or surrounding area."""
         active_statuses = [
-            EmergencyStatusEnum.PENDING.value,
             EmergencyStatusEnum.MATCHING.value,
             EmergencyStatusEnum.NOTIFIED.value,
             EmergencyStatusEnum.CONFIRMED.value,
             EmergencyStatusEnum.IN_PROGRESS.value,
         ]
+        
+        # 1. Attempt exact or partial city match
         stmt = select(EmergencyRequest).where(
             EmergencyRequest.deleted_at.is_(None),
             EmergencyRequest.status.in_(active_statuses),
@@ -108,6 +109,15 @@ class BloodBankRepository:
 
         count_stmt = select(func.count()).select_from(stmt.subquery())
         total = (await self.db.execute(count_stmt)).scalar_one()
+
+        # 2. Fallback: If 0 demand in strictly named city, display active regional emergency demand
+        if total == 0:
+            stmt = select(EmergencyRequest).where(
+                EmergencyRequest.deleted_at.is_(None),
+                EmergencyRequest.status.in_(active_statuses),
+            )
+            count_stmt = select(func.count()).select_from(stmt.subquery())
+            total = (await self.db.execute(count_stmt)).scalar_one()
 
         stmt = stmt.order_by(EmergencyRequest.created_at.desc()).offset(offset).limit(limit)
         items = (await self.db.execute(stmt)).scalars().all()

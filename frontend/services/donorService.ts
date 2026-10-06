@@ -12,6 +12,8 @@ export interface DonorProfileData {
   city: string;
   state?: string | null;
   pincode?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
   weight_kg?: number | null;
   date_of_birth?: string | null;
   gender?: string | null;
@@ -29,6 +31,8 @@ export interface SaveDonorPayload {
   city: string;
   state?: string;
   pincode?: string;
+  latitude?: number;
+  longitude?: number;
   weight_kg?: number;
   date_of_birth?: string;
   gender?: string;
@@ -46,6 +50,9 @@ export interface CompatibleEmergencyOpportunity {
   hospital_name?: string | null;
   city: string;
   state: string;
+  latitude?: number | null;
+  longitude?: number | null;
+  distance_km?: number | null;
   created_at: string;
 }
 

@@ -371,6 +371,28 @@ class InventoryService:
             responded_by=user_id,
         )
 
+        # 6. Record blood bank GPS location as vehicle dispatch tracking if coords available
+        if status in ("ACCEPTED", "PARTIALLY_ACCEPTED") and units_to_commit > 0:
+            try:
+                from app.modules.blood_bank.models import BloodBank as BloodBankModel
+                from app.modules.emergency.gps_models import VehicleLocation
+                
+                bb_stmt = select(BloodBankModel).where(BloodBankModel.id == blood_bank_id)
+                bb_obj = (await self.db.execute(bb_stmt)).scalar_one_or_none()
+                if bb_obj and bb_obj.latitude is not None and bb_obj.longitude is not None:
+                    veh_loc = VehicleLocation(
+                        id=uuid.uuid4(),
+                        request_id=emergency_req.id,
+                        latitude=float(bb_obj.latitude),
+                        longitude=float(bb_obj.longitude),
+                        status_note=f"Dispatch initiated from {bb_obj.name} ({units_to_commit}u committed)",
+                        recorded_at=now,
+                    )
+                    self.db.add(veh_loc)
+                    await self.db.flush()
+            except Exception as e:
+                logger.warning("failed_to_record_dispatch_gps", error=str(e))
+
         await self.db.commit()
         await self.db.refresh(resp)
         logger.info(
@@ -380,6 +402,31 @@ class InventoryService:
             units_committed=units_to_commit,
             status=status,
         )
+
+        # 7. Notify hospital admin of blood bank stock commitment
+        if status in ("ACCEPTED", "PARTIALLY_ACCEPTED"):
+            try:
+                from app.modules.notification.service import NotificationService
+                from app.modules.hospital.models import Hospital
+                from app.modules.auth.models import User as UserModel
+
+                notif = NotificationService(self.db)
+                if emergency_req.hospital_id:
+                    hosp_stmt = select(Hospital).where(Hospital.id == emergency_req.hospital_id)
+                    hosp = (await self.db.execute(hosp_stmt)).scalar_one_or_none()
+                    if hosp and hosp.created_by:
+                        user_stmt = select(UserModel).where(UserModel.id == hosp.created_by)
+                        admin_user = (await self.db.execute(user_stmt)).scalar_one_or_none()
+                        if admin_user:
+                            logger.info(
+                                "NOTIFICATION: blood_bank_committed_stock",
+                                to=admin_user.email,
+                                request_number=emergency_req.request_number,
+                                units_committed=units_to_commit,
+                                blood_bank_id=str(blood_bank_id),
+                            )
+            except Exception as e:
+                logger.warning("notification_hook_failed", error=str(e))
 
         return {
             "id": resp.id,

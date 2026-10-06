@@ -11,6 +11,7 @@ import { emergencyService } from '@/services/emergencyService';
 import { Button } from '@/components/ui/Button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
+import { LocationDetector } from '@/components/ui/LocationDetector';
 
 function EmergencyIntakeContent() {
   const router = useRouter();
@@ -21,6 +22,8 @@ function EmergencyIntakeContent() {
   const [urgencyLevel, setUrgencyLevel] = useState<string>('CRITICAL');
   const [hospitalName, setHospitalName] = useState<string>('');
   const [city, setCity] = useState<string>('Mumbai');
+  const [latitude, setLatitude] = useState<number | null>(null);
+  const [longitude, setLongitude] = useState<number | null>(null);
   const [patientName, setPatientName] = useState<string>('');
   const [patientAge, setPatientAge] = useState<string>('');
   const [notes, setNotes] = useState<string>('');
@@ -71,6 +74,8 @@ function EmergencyIntakeContent() {
         urgency_level: urgencyLevel,
         hospital_name: hospitalName.trim(),
         city: city.trim(),
+        latitude: latitude ?? undefined,
+        longitude: longitude ?? undefined,
         patient_name: patientName.trim() || undefined,
         patient_age: patientAge ? Number(patientAge) : undefined,
         notes: notes.trim() || undefined,
@@ -259,6 +264,21 @@ function EmergencyIntakeContent() {
               </div>
 
               {/* Destination Facility & City */}
+              <div className="pb-1">
+                <LocationDetector
+                  currentCoordinates={{ latitude, longitude }}
+                  onLocationDetected={(loc) => {
+                    if (loc.city) setCity(loc.city);
+                    if (loc.address_line && !hospitalName) {
+                      setHospitalName(loc.address_line);
+                    }
+                    setLatitude(loc.latitude);
+                    setLongitude(loc.longitude);
+                  }}
+                  buttonText="Auto-Detect Hospital Location (GPS)"
+                />
+              </div>
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">

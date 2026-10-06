@@ -40,6 +40,14 @@ export function RequestTrackingView({ requestId, isPublic = false }: { requestId
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lastCheckedAt, setLastCheckedAt] = useState<Date | null>(null);
+  const [vehicleLocation, setVehicleLocation] = useState<{
+    latitude: number;
+    longitude: number;
+    heading?: number;
+    speed_kmh?: number;
+    status_note?: string;
+    recorded_at: string;
+  } | null>(null);
 
   const fetchRequest = useCallback(async (manual = false) => {
     if (!requestId) return;
@@ -52,6 +60,16 @@ export function RequestTrackingView({ requestId, isPublic = false }: { requestId
       setRequest(response.data);
       setError(null);
       setLastCheckedAt(new Date());
+
+      // Fetch latest vehicle GPS tracking telemetry
+      try {
+        const locRes = await emergencyService.getLocation(requestId);
+        if (locRes?.success && locRes.data) {
+          setVehicleLocation(locRes.data);
+        }
+      } catch {
+        // GPS data optional, ignore 404/silence
+      }
     } catch (cause: any) {
       setError(cause.response?.data?.error?.message || cause.message || 'Could not connect to the request service.');
     } finally {
@@ -117,6 +135,59 @@ export function RequestTrackingView({ requestId, isPublic = false }: { requestId
               {!isPublic && request.facility_address && <div className="sm:col-span-2 lg:col-span-3"><p className="text-xs font-medium text-muted-foreground">Facility address</p><p className="mt-1 break-words text-sm">{request.facility_address}</p></div>}
             </CardContent>
           </Card>
+
+          {/* Live Vehicle / Dispatch Location Tracking Card */}
+          {vehicleLocation && (
+            <Card className="border-l-4 border-l-success">
+              <CardHeader className="mb-2 flex-row flex-wrap items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <span className="relative flex h-3 w-3">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75" />
+                    <span className="relative inline-flex rounded-full h-3 w-3 bg-success" />
+                  </span>
+                  <CardTitle className="text-base">Live Dispatch & Location Tracking</CardTitle>
+                </div>
+                <Badge variant="success" size="sm">Active Telemetry</Badge>
+              </CardHeader>
+              <CardContent className="space-y-3 border-t border-border pt-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  <div>
+                    <p className="text-xs font-medium text-muted-foreground">Coordinates</p>
+                    <p className="mt-1 font-mono text-sm font-semibold">
+                      {vehicleLocation.latitude.toFixed(5)}, {vehicleLocation.longitude.toFixed(5)}
+                    </p>
+                  </div>
+                  {vehicleLocation.speed_kmh !== null && vehicleLocation.speed_kmh !== undefined && (
+                    <div>
+                      <p className="text-xs font-medium text-muted-foreground">Speed</p>
+                      <p className="mt-1 text-sm font-semibold">{vehicleLocation.speed_kmh} km/h</p>
+                    </div>
+                  )}
+                  <div>
+                    <p className="text-xs font-medium text-muted-foreground">Telemetry Recorded</p>
+                    <p className="mt-1 text-sm font-semibold">{formatDate(vehicleLocation.recorded_at)}</p>
+                  </div>
+                </div>
+                {vehicleLocation.status_note && (
+                  <div className="rounded-lg bg-muted/40 p-3 text-xs text-foreground">
+                    <span className="font-semibold text-muted-foreground">Status Note: </span>
+                    {vehicleLocation.status_note}
+                  </div>
+                )}
+                <div className="pt-1">
+                  <a
+                    href={`https://www.openstreetmap.org/?mlat=${vehicleLocation.latitude}&mlon=${vehicleLocation.longitude}#map=16/${vehicleLocation.latitude}/${vehicleLocation.longitude}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:underline"
+                  >
+                    📍 View Dispatch on OpenStreetMap &rarr;
+                  </a>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           <p className="text-xs text-muted-foreground">
             {lastCheckedAt ? `Checked ${lastCheckedAt.toLocaleTimeString()}. Status refreshes about every 8 seconds while this page is open.` : 'Status refreshes about every 8 seconds while this page is open.'}
           </p>

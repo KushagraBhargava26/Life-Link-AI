@@ -58,4 +58,9 @@ export const hospitalService = {
     const res = await apiClient.delete<{ success: boolean; data: any }>('/hospitals/me');
     return res.data;
   },
+
+  async escalateRequest(requestId: string): Promise<any> {
+    const res = await apiClient.post<{ success: boolean; data: any }>(`/hospitals/me/requests/${requestId}/escalate`);
+    return res.data;
+  },
 };

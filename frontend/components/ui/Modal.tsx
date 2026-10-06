@@ -16,6 +16,8 @@ interface ModalProps {
 export function Modal({ isOpen, onClose, title, children }: ModalProps) {
   const titleId = useId();
   const dialogRef = useRef<HTMLDivElement>(null);
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
 
   useEffect(() => {
     if (!isOpen) return;
@@ -26,10 +28,13 @@ export function Modal({ isOpen, onClose, title, children }: ModalProps) {
       'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
     );
     document.body.style.overflow = 'hidden';
-    focusable()?.[0]?.focus();
+
+    if (dialog && !dialog.contains(document.activeElement)) {
+      focusable()?.[0]?.focus();
+    }
 
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onClose();
+      if (event.key === 'Escape') onCloseRef.current();
       if (event.key !== 'Tab') return;
       const controls = focusable();
       if (!controls?.length) {
@@ -53,7 +58,7 @@ export function Modal({ isOpen, onClose, title, children }: ModalProps) {
       document.body.style.overflow = bodyOverflow;
       previousFocus?.focus();
     };
-  }, [isOpen, onClose]);
+  }, [isOpen]);
 
   if (!isOpen) return null;
 

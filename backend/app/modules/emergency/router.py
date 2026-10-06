@@ -139,6 +139,32 @@ async def update_emergency_status(
 
 
 @router.post(
+    "/{request_id}/escalate",
+    response_model=dict[str, Any],
+    status_code=status.HTTP_200_OK,
+    summary="Escalate Emergency Request to Donors & Blood Banks",
+)
+@router.post(
+    "/requests/{request_id}/escalate",
+    response_model=dict[str, Any],
+    status_code=status.HTTP_200_OK,
+    include_in_schema=False,
+)
+async def escalate_emergency_request_public(
+    request_id: str,
+    reason: Optional[str] = Query(None, description="Reason for escalation / shortage details"),
+    db: AsyncSession = Depends(get_db),
+) -> dict[str, Any]:
+    service = EmergencyService(db)
+    req = await service.escalate_request(
+        identifier=request_id,
+        reason=reason,
+    )
+    resp_data = EmergencyStatusResponseSchema.model_validate(req).model_dump(mode="json")
+    return _format_success(data=resp_data, message="Emergency request broadcasted to voluntary donors and blood banks")
+
+
+@router.post(
     "/{request_id}/cancel",
     response_model=dict[str, Any],
     status_code=status.HTTP_200_OK,

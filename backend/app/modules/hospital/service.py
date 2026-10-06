@@ -145,7 +145,9 @@ class HospitalService:
     async def get_hospital_dashboard(self, user_id: uuid.UUID) -> dict[str, Any]:
         """Fetch live operational dashboard state for the hospital."""
         hospital = await self.get_my_hospital(user_id)
-        requests, total = await self.repository.list_hospital_requests(hospital.id, limit=10, offset=0)
+        requests, total = await self.repository.list_hospital_requests(
+            hospital.id, city=hospital.city, limit=10, offset=0
+        )
 
         active_count = sum(
             1 for r in requests if r.status in (
@@ -160,6 +162,22 @@ class HospitalService:
             1 for r in requests if r.status == EmergencyStatusEnum.PENDING.value
         )
 
+        req_ids = [r.id for r in requests]
+        accepted_map: dict[uuid.UUID, int] = {}
+        if req_ids:
+            try:
+                from app.modules.donor.models import DonorEmergencyResponse
+                resp_stmt = select(DonorEmergencyResponse.emergency_request_id).where(
+                    DonorEmergencyResponse.emergency_request_id.in_(req_ids),
+                    DonorEmergencyResponse.status == "ACCEPTED",
+                    DonorEmergencyResponse.deleted_at.is_(None),
+                )
+                resp_rows = (await self.db.execute(resp_stmt)).scalars().all()
+                for eid in resp_rows:
+                    accepted_map[eid] = accepted_map.get(eid, 0) + 1
+            except Exception as e:
+                logger.warning("donor_response_map_failed", error=str(e))
+
         recent = [
             {
                 "id": str(r.id),
@@ -170,6 +188,8 @@ class HospitalService:
                 "urgency_level": r.urgency_level,
                 "status": r.status,
                 "city": r.city,
+                "has_accepted_donor": accepted_map.get(r.id, 0) > 0,
+                "accepted_donors_count": accepted_map.get(r.id, 0),
                 "created_at": r.created_at.isoformat() if r.created_at else None,
             }
             for r in requests
@@ -186,7 +206,25 @@ class HospitalService:
         self, user_id: uuid.UUID, limit: int = 20, offset: int = 0
     ) -> tuple[list[dict[str, Any]], int]:
         hospital = await self.get_my_hospital(user_id)
-        requests, total = await self.repository.list_hospital_requests(hospital.id, limit=limit, offset=offset)
+        requests, total = await self.repository.list_hospital_requests(
+            hospital.id, city=hospital.city, limit=limit, offset=offset
+        )
+        req_ids = [r.id for r in requests]
+        accepted_map: dict[uuid.UUID, int] = {}
+        if req_ids:
+            try:
+                from app.modules.donor.models import DonorEmergencyResponse
+                resp_stmt = select(DonorEmergencyResponse.emergency_request_id).where(
+                    DonorEmergencyResponse.emergency_request_id.in_(req_ids),
+                    DonorEmergencyResponse.status == "ACCEPTED",
+                    DonorEmergencyResponse.deleted_at.is_(None),
+                )
+                resp_rows = (await self.db.execute(resp_stmt)).scalars().all()
+                for eid in resp_rows:
+                    accepted_map[eid] = accepted_map.get(eid, 0) + 1
+            except Exception as e:
+                logger.warning("donor_response_map_failed", error=str(e))
+
         items = [
             {
                 "id": str(r.id),
@@ -196,8 +234,10 @@ class HospitalService:
                 "units_fulfilled": r.units_fulfilled,
                 "urgency_level": r.urgency_level,
                 "status": r.status,
-                "hospital_name": hospital.name,
+                "hospital_name": r.hospital_name or hospital.name,
                 "city": r.city,
+                "has_accepted_donor": accepted_map.get(r.id, 0) > 0,
+                "accepted_donors_count": accepted_map.get(r.id, 0),
                 "created_at": r.created_at.isoformat() if r.created_at else None,
             }
             for r in requests
@@ -218,6 +258,10 @@ class HospitalService:
         # Set hospital details on the request schema
         data.hospital_name = hospital.name
         data.city = hospital.city
+        if hospital.latitude is not None:
+            data.latitude = float(hospital.latitude)
+        if hospital.longitude is not None:
+            data.longitude = float(hospital.longitude)
         if not data.facility_address:
             data.facility_address = f"{hospital.name}, {hospital.address_line}, {hospital.city}"
 

@@ -132,6 +132,23 @@ class BloodBankService:
             bank.city, limit=10, offset=0
         )
 
+        req_ids = [r.id for r in demand_requests]
+        accepted_map: dict[uuid.UUID, int] = {}
+        if req_ids:
+            try:
+                from sqlalchemy import select
+                from app.modules.donor.models import DonorEmergencyResponse
+                resp_stmt = select(DonorEmergencyResponse.emergency_request_id).where(
+                    DonorEmergencyResponse.emergency_request_id.in_(req_ids),
+                    DonorEmergencyResponse.status == "ACCEPTED",
+                    DonorEmergencyResponse.deleted_at.is_(None),
+                )
+                resp_rows = (await self.db.execute(resp_stmt)).scalars().all()
+                for eid in resp_rows:
+                    accepted_map[eid] = accepted_map.get(eid, 0) + 1
+            except Exception as e:
+                logger.warning("blood_bank_donor_response_map_failed", error=str(e))
+
         demand_items = [
             {
                 "id": str(r.id),
@@ -143,6 +160,8 @@ class BloodBankService:
                 "hospital_name": r.hospital_name or "Emergency Center",
                 "city": r.city,
                 "status": r.status,
+                "has_accepted_donor": accepted_map.get(r.id, 0) > 0,
+                "accepted_donors_count": accepted_map.get(r.id, 0),
                 "created_at": r.created_at.isoformat() if r.created_at else None,
             }
             for r in demand_requests
@@ -162,6 +181,23 @@ class BloodBankService:
         demand_requests, total = await self.repository.get_emergency_demand_in_city(
             bank.city, limit=limit, offset=offset
         )
+        req_ids = [r.id for r in demand_requests]
+        accepted_map: dict[uuid.UUID, int] = {}
+        if req_ids:
+            try:
+                from sqlalchemy import select
+                from app.modules.donor.models import DonorEmergencyResponse
+                resp_stmt = select(DonorEmergencyResponse.emergency_request_id).where(
+                    DonorEmergencyResponse.emergency_request_id.in_(req_ids),
+                    DonorEmergencyResponse.status == "ACCEPTED",
+                    DonorEmergencyResponse.deleted_at.is_(None),
+                )
+                resp_rows = (await self.db.execute(resp_stmt)).scalars().all()
+                for eid in resp_rows:
+                    accepted_map[eid] = accepted_map.get(eid, 0) + 1
+            except Exception as e:
+                logger.warning("blood_bank_donor_response_map_failed", error=str(e))
+
         items = [
             {
                 "id": str(r.id),
@@ -173,6 +209,8 @@ class BloodBankService:
                 "hospital_name": r.hospital_name or "Emergency Center",
                 "city": r.city,
                 "status": r.status,
+                "has_accepted_donor": accepted_map.get(r.id, 0) > 0,
+                "accepted_donors_count": accepted_map.get(r.id, 0),
                 "created_at": r.created_at.isoformat() if r.created_at else None,
             }
             for r in demand_requests

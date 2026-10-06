@@ -122,11 +122,20 @@ class HospitalRepository:
     async def list_hospital_requests(
         self,
         hospital_id: uuid.UUID,
+        city: Optional[str] = None,
         limit: int = 20,
         offset: int = 0,
     ) -> tuple[list[EmergencyRequest], int]:
-        stmt = select(EmergencyRequest).where(
+        from sqlalchemy import or_
+
+        # Include requests linked directly to this hospital OR any unassigned public requests
+        condition = or_(
             EmergencyRequest.hospital_id == hospital_id,
+            EmergencyRequest.hospital_id.is_(None),
+        )
+
+        stmt = select(EmergencyRequest).where(
+            condition,
             EmergencyRequest.deleted_at.is_(None),
         )
         count_stmt = select(func.count()).select_from(stmt.subquery())

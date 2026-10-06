@@ -20,6 +20,8 @@ class DonorCreateSchema(BaseModel):
     city: str = Field(..., min_length=2, max_length=100, description="City of residence")
     state: Optional[str] = Field(default=None, max_length=100)
     pincode: Optional[str] = Field(default=None, max_length=10)
+    latitude: Optional[float] = Field(default=None, ge=-90.0, le=90.0)
+    longitude: Optional[float] = Field(default=None, ge=-180.0, le=180.0)
     weight_kg: Optional[float] = Field(default=None, ge=45.0, le=250.0, description="Weight in kg (minimum 45kg for eligibility)")
     date_of_birth: Optional[datetime.date] = None
     gender: Optional[str] = None
@@ -62,6 +64,8 @@ class DonorUpdateSchema(BaseModel):
     city: Optional[str] = Field(default=None, min_length=2, max_length=100)
     state: Optional[str] = None
     pincode: Optional[str] = None
+    latitude: Optional[float] = Field(default=None, ge=-90.0, le=90.0)
+    longitude: Optional[float] = Field(default=None, ge=-180.0, le=180.0)
     weight_kg: Optional[float] = Field(default=None, ge=45.0, le=250.0)
     date_of_birth: Optional[datetime.date] = None
     gender: Optional[str] = None
@@ -105,6 +109,8 @@ class DonorResponseSchema(BaseModel):
     city: str
     state: Optional[str] = None
     pincode: Optional[str] = None
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
     weight_kg: Optional[float] = None
     date_of_birth: Optional[datetime.date] = None
     gender: Optional[str] = None
@@ -127,6 +133,9 @@ class CompatibleEmergencyOpportunitySchema(BaseModel):
     hospital_name: Optional[str] = None
     city: str
     state: str
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
+    distance_km: Optional[float] = None
     created_at: datetime.datetime
 
 

@@ -31,6 +31,7 @@ export default function HospitalRequestsPage() {
   // New Request Modal state
   const [modalOpen, setModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [escalatingId, setEscalatingId] = useState<string | null>(null);
   const [submitSuccess, setSubmitSuccess] = useState<string | null>(null);
   const [reqForm, setReqForm] = useState({
     blood_type: '',
@@ -41,9 +42,21 @@ export default function HospitalRequestsPage() {
     notes: '',
   });
 
-  const loadRequests = useCallback(async () => {
-    setIsLoading(true);
-      setError(null);
+  const handleQuickEscalate = async (reqId: string) => {
+    setEscalatingId(reqId);
+    try {
+      await hospitalService.escalateRequest(reqId);
+      await loadRequests(true);
+    } catch (err: any) {
+      setError(err?.response?.data?.error?.message || 'Failed to broadcast shortage.');
+    } finally {
+      setEscalatingId(null);
+    }
+  };
+
+  const loadRequests = useCallback(async (silent = false) => {
+    if (!silent) setIsLoading(true);
+    setError(null);
     try {
       const data = await hospitalService.getRequests({ limit: pageSize, offset });
       setRequests(data.items);
@@ -51,13 +64,16 @@ export default function HospitalRequestsPage() {
     } catch (err: any) {
       setError(err.response?.data?.error?.message || 'Failed to load emergency requisitions.');
     } finally {
-      setIsLoading(false);
+      if (!silent) setIsLoading(false);
     }
   }, [offset]);
 
   useEffect(() => {
     if (isAuthenticated) {
       loadRequests();
+      // Auto-poll every 20 s so status changes from blood banks / donors appear
+      const intervalId = window.setInterval(() => void loadRequests(true), 20_000);
+      return () => window.clearInterval(intervalId);
     }
   }, [isAuthenticated, loadRequests]);
 
@@ -107,6 +123,13 @@ export default function HospitalRequestsPage() {
               Hospital Requisitions Log
             </h1>
             <Badge variant="default" size="sm">{total} Total</Badge>
+            <span className="flex items-center gap-1 text-[10px] font-semibold text-success">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-success" />
+              </span>
+              Live
+            </span>
           </div>
           <p className="text-sm text-muted-foreground">
             Requisitions for this facility. Use the controls below to filter and browse the returned records.
@@ -207,15 +230,45 @@ export default function HospitalRequestsPage() {
                       </Badge>
                     </td>
                     <td className="px-4 py-3">
-                      <Badge variant="default" size="sm">
-                        {r.status}
-                      </Badge>
+                      <div className="flex flex-col gap-1 items-start">
+                        <Badge
+                          variant={
+                            r.status === 'FULFILLED'
+                              ? 'success'
+                              : r.status === 'IN_PROGRESS' || r.status === 'CONFIRMED'
+                              ? 'warning'
+                              : r.status === 'CANCELLED'
+                              ? 'critical'
+                              : 'default'
+                          }
+                          size="sm"
+                        >
+                          {r.status === 'PENDING' ? 'PENDING (TRIAGE)' : r.status}
+                        </Badge>
+                        {r.has_accepted_donor && (
+                          <span className="text-[11px] font-bold text-success flex items-center gap-1">
+                            ✅ Donor Accepted
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="px-4 py-3 text-xs text-muted-foreground">
                       {r.created_at ? new Date(r.created_at).toLocaleString() : 'Unavailable'}
                     </td>
                     <td className="px-4 py-3 text-right">
                         <div className="flex items-center justify-end gap-2">
+                          {r.status === 'PENDING' && (
+                            <Button
+                              variant="danger"
+                              size="sm"
+                              className="text-xs h-7 px-2 font-bold whitespace-nowrap shadow-sm"
+                              onClick={() => handleQuickEscalate(r.id)}
+                              isLoading={escalatingId === r.id}
+                              title="Broadcast shortage to donors & blood banks"
+                            >
+                              ⚠️ Broadcast Shortage
+                            </Button>
+                          )}
                           <Link href={`/emergency/track/${r.request_number}`}>
                             <Button variant="danger" size="sm" className="text-xs h-7 px-2.5 font-bold shadow-sm flex items-center gap-1">
                               Track request

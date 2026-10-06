@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/Button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Input } from '@/components/ui/Input';
+import { LocationDetector } from '@/components/ui/LocationDetector';
 import type { BloodBank, BloodBankCreateData } from '@/types';
 
 export default function BloodBankProfilePage() {
@@ -37,6 +38,8 @@ export default function BloodBankProfilePage() {
     city: '',
     state: '',
     pincode: '',
+    latitude: null,
+    longitude: null,
     phone: '',
     email: '',
     operating_hours: '',
@@ -60,6 +63,8 @@ export default function BloodBankProfilePage() {
           city: data.city,
           state: data.state,
           pincode: data.pincode,
+          latitude: data.latitude ?? null,
+          longitude: data.longitude ?? null,
           phone: data.phone,
           email: data.email || '',
           operating_hours: data.operating_hours || '',
@@ -295,6 +300,23 @@ export default function BloodBankProfilePage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
+            <div className="pb-1">
+              <LocationDetector
+                currentCoordinates={{ latitude: formData.latitude, longitude: formData.longitude }}
+                onLocationDetected={(loc) => {
+                  setFormData((prev) => ({
+                    ...prev,
+                    address_line: loc.address_line || prev.address_line,
+                    city: loc.city || prev.city,
+                    state: loc.state || prev.state,
+                    pincode: loc.pincode || prev.pincode,
+                    latitude: loc.latitude,
+                    longitude: loc.longitude,
+                  }));
+                }}
+              />
+            </div>
+
             <div className="space-y-1.5">
               <label className="text-xs font-semibold text-foreground">Street Address / Campus *</label>
               <Input

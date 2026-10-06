@@ -52,6 +52,10 @@ class DonorService:
                 existing.state = data.state
             if data.pincode is not None:
                 existing.pincode = data.pincode
+            if data.latitude is not None:
+                existing.latitude = data.latitude
+            if data.longitude is not None:
+                existing.longitude = data.longitude
             if data.weight_kg is not None:
                 existing.weight_kg = data.weight_kg
             if data.date_of_birth is not None:
@@ -76,6 +80,8 @@ class DonorService:
             city=data.city,
             state=data.state,
             pincode=data.pincode,
+            latitude=data.latitude,
+            longitude=data.longitude,
             weight_kg=data.weight_kg,
             date_of_birth=data.date_of_birth,
             gender=data.gender,
@@ -105,6 +111,10 @@ class DonorService:
             donor.state = data.state
         if data.pincode is not None:
             donor.pincode = data.pincode
+        if data.latitude is not None:
+            donor.latitude = data.latitude
+        if data.longitude is not None:
+            donor.longitude = data.longitude
         if data.weight_kg is not None:
             donor.weight_kg = data.weight_kg
         if data.date_of_birth is not None:
@@ -178,9 +188,8 @@ class DonorService:
             else:
                 days_until_eligible = 0
 
-        # Query active emergency requests
+        # Query active emergency requests that have been escalated from hospital triage
         active_statuses = [
-            EmergencyStatusEnum.PENDING.value,
             EmergencyStatusEnum.MATCHING.value,
             EmergencyStatusEnum.NOTIFIED.value,
             EmergencyStatusEnum.IN_PROGRESS.value,
@@ -197,10 +206,28 @@ class DonorService:
         res = await self.db.execute(stmt)
         requests = res.scalars().all()
 
+        from app.modules.matching.service import calculate_haversine_distance
+
         opportunities: list[CompatibleEmergencyOpportunitySchema] = []
         for req in requests:
             try:
                 if is_compatible(donor.blood_type, req.blood_type):
+                    dist_km = None
+                    if (
+                        donor.latitude is not None
+                        and donor.longitude is not None
+                        and req.latitude is not None
+                        and req.longitude is not None
+                    ):
+                        dist_km = calculate_haversine_distance(
+                            float(donor.latitude),
+                            float(donor.longitude),
+                            float(req.latitude),
+                            float(req.longitude),
+                        )
+                        if dist_km is not None:
+                            dist_km = round(dist_km, 1)
+
                     opportunities.append(
                         CompatibleEmergencyOpportunitySchema(
                             id=req.id,
@@ -212,11 +239,17 @@ class DonorService:
                             hospital_name=req.hospital_name,
                             city=req.city,
                             state="Active Request",
+                            latitude=float(req.latitude) if req.latitude is not None else None,
+                            longitude=float(req.longitude) if req.longitude is not None else None,
+                            distance_km=dist_km,
                             created_at=req.created_at,
                         )
                     )
             except Exception:
                 continue
+
+        # Sort opportunities by distance (closest first), with None at the end
+        opportunities.sort(key=lambda opp: (opp.distance_km is None, opp.distance_km or 0))
 
         profile_schema = DonorResponseSchema.model_validate(donor)
 
@@ -391,13 +424,18 @@ class DonorService:
             self.db.add(new_resp)
             await self.db.commit()
             await self.db.refresh(new_resp)
+            result_resp = new_resp
             logger.info(
                 "donor_response_created",
                 request_id=str(req.id),
                 donor_id=str(donor.id),
                 status=status,
             )
-            result_resp = new_resp
+        # Update emergency request status to IN_PROGRESS when donor accepts and still matching/pending
+        if status == "ACCEPTED" and req.status in ("PENDING", "MATCHING"):
+            req.status = "IN_PROGRESS"
+            await self.db.commit()
+            await self.db.refresh(req)
 
         # Fire notification hook
         if status == "ACCEPTED":
@@ -410,8 +448,9 @@ class DonorService:
                 if req.hospital_id:
                     hosp_stmt = select(Hospital).where(Hospital.id == req.hospital_id)
                     hosp = (await self.db.execute(hosp_stmt)).scalar_one_or_none()
-                    if hosp and hosp.admin_user_id:
-                        user_stmt = select(UserModel).where(UserModel.id == hosp.admin_user_id)
+                    admin_id = getattr(hosp, 'created_by', None) or getattr(hosp, 'admin_user_id', None)
+                    if hosp and admin_id:
+                        user_stmt = select(UserModel).where(UserModel.id == admin_id)
                         admin_user = (await self.db.execute(user_stmt)).scalar_one_or_none()
                         
                         donor_user_stmt = select(UserModel).where(UserModel.id == donor.user_id)
