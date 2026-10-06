@@ -16,6 +16,18 @@ cd /d "%REPO_ROOT%"
 :: 1. Check prerequisites
 echo Checking prerequisites...
 
+:: Ensure Docker binary path is in PATH
+where docker >nul 2>nul
+if %ERRORLEVEL% neq 0 (
+    if exist "C:\Program Files\Docker\Docker\resources\bin\docker.exe" (
+        set "PATH=C:\Program Files\Docker\Docker\resources\bin;!PATH!"
+    ) else if exist "%ProgramFiles%\Docker\Docker\resources\bin\docker.exe" (
+        set "PATH=%ProgramFiles%\Docker\Docker\resources\bin;!PATH!"
+    ) else if exist "%LocalAppData%\Docker\resources\bin\docker.exe" (
+        set "PATH=%LocalAppData%\Docker\resources\bin;!PATH!"
+    )
+)
+
 where docker >nul 2>nul
 if %ERRORLEVEL% neq 0 (
     set "ERR_REASON=Docker is not installed. Please install Docker Desktop and try again."
