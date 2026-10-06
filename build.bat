@@ -48,11 +48,25 @@ if %ERRORLEVEL% neq 0 (
 
 echo [PASS] Docker daemon is available.
 
+:: Ensure Docker CLI plugins directory has docker-compose plugin
+if not exist "%USERPROFILE%\.docker\cli-plugins\docker-compose.exe" (
+    if exist "C:\Program Files\Docker\Docker\resources\cli-plugins\docker-compose.exe" (
+        if not exist "%USERPROFILE%\.docker\cli-plugins" mkdir "%USERPROFILE%\.docker\cli-plugins" >nul 2>&1
+        copy /y "C:\Program Files\Docker\Docker\resources\cli-plugins\docker-compose.exe" "%USERPROFILE%\.docker\cli-plugins\docker-compose.exe" >nul 2>&1
+    )
+)
+
 :: 3. Check Compose
+set "DOCKER_COMPOSE=docker compose"
 docker compose version >nul 2>nul
 if %ERRORLEVEL% neq 0 (
-    set "ERR_REASON=Docker Compose (v2+) is not available. Please ensure Docker Desktop is updated."
-    goto :error
+    where docker-compose >nul 2>nul
+    if !ERRORLEVEL! equ 0 (
+        set "DOCKER_COMPOSE=docker-compose"
+    ) else (
+        set "ERR_REASON=Docker Compose (v2+) is not available. Please ensure Docker Desktop is updated."
+        goto :error
+    )
 )
 
 :: 4. Environment configuration (.env setup)
@@ -105,9 +119,9 @@ echo =======================================================================
 :: 5. Validate Compose configuration
 echo.
 echo Validating Docker Compose configuration...
-docker compose config >nul 2>&1
+%DOCKER_COMPOSE% config >nul 2>&1
 if %ERRORLEVEL% neq 0 (
-    docker compose config
+    %DOCKER_COMPOSE% config
     set "ERR_REASON=Docker Compose configuration is invalid."
     goto :error
 )
@@ -116,7 +130,7 @@ echo [PASS] Docker Compose configuration is valid.
 :: 6. Build containers
 echo.
 echo Building Docker containers (this may take several minutes)...
-docker compose build
+%DOCKER_COMPOSE% build
 if %ERRORLEVEL% neq 0 (
     set "ERR_REASON=Docker image build failed."
     goto :error

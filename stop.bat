@@ -38,9 +38,27 @@ if %ERRORLEVEL% neq 0 (
     goto :error
 )
 
+:: Ensure Docker CLI plugins directory has docker-compose plugin
+if not exist "%USERPROFILE%\.docker\cli-plugins\docker-compose.exe" (
+    if exist "C:\Program Files\Docker\Docker\resources\cli-plugins\docker-compose.exe" (
+        if not exist "%USERPROFILE%\.docker\cli-plugins" mkdir "%USERPROFILE%\.docker\cli-plugins" >nul 2>&1
+        copy /y "C:\Program Files\Docker\Docker\resources\cli-plugins\docker-compose.exe" "%USERPROFILE%\.docker\cli-plugins\docker-compose.exe" >nul 2>&1
+    )
+)
+
+:: Resolve Compose command (docker compose vs docker-compose)
+set "DOCKER_COMPOSE=docker compose"
+docker compose version >nul 2>nul
+if %ERRORLEVEL% neq 0 (
+    where docker-compose >nul 2>nul
+    if !ERRORLEVEL! equ 0 (
+        set "DOCKER_COMPOSE=docker-compose"
+    )
+)
+
 :: Step 2 — Stop services
 echo Stopping LifeLink AI containers...
-docker compose down
+%DOCKER_COMPOSE% down
 
 if %ERRORLEVEL% neq 0 (
     set "ERR_REASON=Failed to cleanly bring down the Docker Compose stack."

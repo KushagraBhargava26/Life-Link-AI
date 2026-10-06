@@ -60,7 +60,25 @@ if %ERRORLEVEL% neq 0 (
     set "ERR_REASON=Docker Desktop is not running. Please start Docker Desktop and try again."
     goto :error
 )
-echo [OK] Docker is running.
+
+:: Ensure Docker CLI plugins directory has docker-compose plugin
+if not exist "%USERPROFILE%\.docker\cli-plugins\docker-compose.exe" (
+    if exist "C:\Program Files\Docker\Docker\resources\cli-plugins\docker-compose.exe" (
+        if not exist "%USERPROFILE%\.docker\cli-plugins" mkdir "%USERPROFILE%\.docker\cli-plugins" >nul 2>&1
+        copy /y "C:\Program Files\Docker\Docker\resources\cli-plugins\docker-compose.exe" "%USERPROFILE%\.docker\cli-plugins\docker-compose.exe" >nul 2>&1
+    )
+)
+
+:: Resolve Compose command (docker compose vs docker-compose)
+set "DOCKER_COMPOSE=docker compose"
+docker compose version >nul 2>nul
+if %ERRORLEVEL% neq 0 (
+    where docker-compose >nul 2>nul
+    if !ERRORLEVEL! equ 0 (
+        set "DOCKER_COMPOSE=docker-compose"
+    )
+)
+echo [OK] Docker and Docker Compose are ready.
 
 :: ---------------------------------------------------------------------------
 :: Step 2 — Pull latest code from GitHub
@@ -94,7 +112,7 @@ echo [OK] Latest code pulled from GitHub.
 :: ---------------------------------------------------------------------------
 echo.
 echo [3/6] Stopping existing containers...
-docker compose down
+%DOCKER_COMPOSE% down
 if %ERRORLEVEL% neq 0 (
     set "ERR_REASON=Failed to stop existing containers."
     goto :error
@@ -113,11 +131,11 @@ echo.
 set "COMPOSE_HTTP_TIMEOUT=300"
 set "DOCKER_CLIENT_TIMEOUT=300"
 
-docker compose build
+%DOCKER_COMPOSE% build
 if %ERRORLEVEL% neq 0 (
     echo.
     echo [WARN] First build attempt had issues. Retrying build...
-    docker compose build
+    %DOCKER_COMPOSE% build
     if !ERRORLEVEL! neq 0 (
         set "ERR_REASON=Docker image rebuild failed. Check the error above for details."
         goto :error
@@ -156,7 +174,7 @@ for %%I in (%PULL_IMAGES%) do (
 :: ---------------------------------------------------------------------------
 echo.
 echo Starting all updated containers...
-docker compose up -d
+%DOCKER_COMPOSE% up -d
 if %ERRORLEVEL% neq 0 (
     set "ERR_REASON=Failed to start the Docker Compose stack after rebuild."
     goto :error
@@ -184,8 +202,8 @@ set /a ELAPSED+=INTERVAL
 if %ELAPSED% geq %TIMEOUT% (
     echo.
     echo [FAIL] Services did not become healthy within %TIMEOUT% seconds.
-    docker compose ps
-    set "ERR_REASON=Startup timed out. Check container logs with: docker compose logs"
+    %DOCKER_COMPOSE% ps
+    set "ERR_REASON=Startup timed out. Check container logs with: %DOCKER_COMPOSE% logs"
     goto :error
 )
 

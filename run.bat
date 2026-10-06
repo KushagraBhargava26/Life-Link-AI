@@ -39,6 +39,24 @@ if %ERRORLEVEL% neq 0 (
     goto :error
 )
 
+:: Ensure Docker CLI plugins directory has docker-compose plugin
+if not exist "%USERPROFILE%\.docker\cli-plugins\docker-compose.exe" (
+    if exist "C:\Program Files\Docker\Docker\resources\cli-plugins\docker-compose.exe" (
+        if not exist "%USERPROFILE%\.docker\cli-plugins" mkdir "%USERPROFILE%\.docker\cli-plugins" >nul 2>&1
+        copy /y "C:\Program Files\Docker\Docker\resources\cli-plugins\docker-compose.exe" "%USERPROFILE%\.docker\cli-plugins\docker-compose.exe" >nul 2>&1
+    )
+)
+
+:: Resolve Compose command (docker compose vs docker-compose)
+set "DOCKER_COMPOSE=docker compose"
+docker compose version >nul 2>nul
+if %ERRORLEVEL% neq 0 (
+    where docker-compose >nul 2>nul
+    if !ERRORLEVEL! equ 0 (
+        set "DOCKER_COMPOSE=docker-compose"
+    )
+)
+
 :: Step 2 — Check .env
 if not exist ".env" (
     set "ERR_REASON=.env was not found. Please run build.bat first."
@@ -73,7 +91,7 @@ for %%I in (%PULL_IMAGES%) do (
 
 :: Step 3b — Start the stack
 echo Starting all containers...
-docker compose up -d
+%DOCKER_COMPOSE% up -d
 if %ERRORLEVEL% neq 0 (
     set "ERR_REASON=Failed to start the Docker Compose stack."
     goto :error
@@ -112,10 +130,10 @@ echo =======================================================================
 echo.
 echo One or more containers failed to become healthy within %TIMEOUT% seconds.
 echo Current container states:
-docker compose ps
+%DOCKER_COMPOSE% ps
 echo.
 echo Printing recent backend logs for troubleshooting:
-docker compose logs backend --tail 20
+%DOCKER_COMPOSE% logs backend --tail 20
 set "ERR_REASON=Startup failed. Inspect container health status and logs above."
 goto :error
 
@@ -160,9 +178,9 @@ start "" "http://localhost"
 :: Step 7 — Launch dedicated live log windows
 echo.
 echo Launching dedicated application log windows...
-start "LifeLink Logs - Frontend" cmd.exe /k "title LifeLink Logs - Frontend && cd /d "%REPO_ROOT%" && echo ======================================================================= && echo         LIFELINK AI - FRONTEND LOGS (NEXT.JS) && echo ======================================================================= && echo. && docker compose logs -f frontend"
-start "LifeLink Logs - Backend" cmd.exe /k "title LifeLink Logs - Backend && cd /d "%REPO_ROOT%" && echo ======================================================================= && echo         LIFELINK AI - BACKEND LOGS (FASTAPI) && echo ======================================================================= && echo. && docker compose logs -f backend"
-start "LifeLink Logs - AI Service" cmd.exe /k "title LifeLink Logs - AI Service && cd /d "%REPO_ROOT%" && echo ======================================================================= && echo         LIFELINK AI - AI SERVICE LOGS (FASTAPI / ML) && echo ======================================================================= && echo. && docker compose logs -f ai-service"
+start "LifeLink Logs - Frontend" cmd.exe /k "title LifeLink Logs - Frontend && cd /d "%REPO_ROOT%" && echo ======================================================================= && echo         LIFELINK AI - FRONTEND LOGS (NEXT.JS) && echo ======================================================================= && echo. && %DOCKER_COMPOSE% logs -f frontend"
+start "LifeLink Logs - Backend" cmd.exe /k "title LifeLink Logs - Backend && cd /d "%REPO_ROOT%" && echo ======================================================================= && echo         LIFELINK AI - BACKEND LOGS (FASTAPI) && echo ======================================================================= && echo. && %DOCKER_COMPOSE% logs -f backend"
+start "LifeLink Logs - AI Service" cmd.exe /k "title LifeLink Logs - AI Service && cd /d "%REPO_ROOT%" && echo ======================================================================= && echo         LIFELINK AI - AI SERVICE LOGS (FASTAPI / ML) && echo ======================================================================= && echo. && %DOCKER_COMPOSE% logs -f ai-service"
 
 :: Step 8 — Live Stream in Main Terminal
 echo.
@@ -193,7 +211,7 @@ echo Streaming overall stack logs below (Press Ctrl+C to detach):
 echo To shut down all services and close log windows: run stop.bat
 echo =======================================================================
 echo.
-docker compose logs -f --tail 20
+%DOCKER_COMPOSE% logs -f --tail 20
 echo.
 echo =======================================================================
 echo Log streaming ended or interrupted.
