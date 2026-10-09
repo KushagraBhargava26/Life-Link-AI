@@ -8,7 +8,7 @@ import React from 'react';
 import { cn } from '@/lib/utils';
 
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'danger' | 'ghost' | 'outline';
+  variant?: 'primary' | 'secondary' | 'danger' | 'success' | 'ghost' | 'outline';
   size?: 'sm' | 'md' | 'lg';
   isLoading?: boolean;
   children: React.ReactNode;
@@ -24,6 +24,9 @@ const variantClasses: Record<NonNullable<ButtonProps['variant']>, string> = {
   // Emergency / Critical Action (Semantically red)
   danger:
     'bg-critical text-white hover:bg-red-700 shadow-sm shadow-critical/30 active:scale-[0.98]',
+  // Success / Fulfillment action (Semantically green)
+  success:
+    'bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm shadow-emerald-600/30 active:scale-[0.98]',
   // Low priority / icon action
   ghost:
     'text-muted-foreground hover:bg-muted hover:text-foreground active:scale-[0.98]',

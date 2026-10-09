@@ -71,6 +71,16 @@ export const emergencyService = {
     );
     return response.data;
   },
+
+  /**
+   * Mark an emergency requisition as fulfilled once blood is received
+   */
+  async fulfillRequest(idOrNumber: string): Promise<ApiSuccessResponse<EmergencyRequestData>> {
+    const response = await api.post<ApiSuccessResponse<EmergencyRequestData>>(
+      `/emergency/${encodeURIComponent(idOrNumber)}/fulfill`
+    );
+    return response.data;
+  },
 };
 
 export default emergencyService;

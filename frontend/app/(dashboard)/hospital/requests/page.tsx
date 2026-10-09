@@ -9,6 +9,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
 import { hospitalService } from '@/services/hospitalService';
+import { emergencyService } from '@/services/emergencyService';
 import { Button } from '@/components/ui/Button';
 import { Card, CardContent } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
@@ -32,6 +33,7 @@ export default function HospitalRequestsPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [escalatingId, setEscalatingId] = useState<string | null>(null);
+  const [fulfillingId, setFulfillingId] = useState<string | null>(null);
   const [submitSuccess, setSubmitSuccess] = useState<string | null>(null);
   const [reqForm, setReqForm] = useState({
     blood_type: '',
@@ -51,6 +53,18 @@ export default function HospitalRequestsPage() {
       setError(err?.response?.data?.error?.message || 'Failed to broadcast shortage.');
     } finally {
       setEscalatingId(null);
+    }
+  };
+
+  const handleQuickFulfill = async (reqId: string) => {
+    setFulfillingId(reqId);
+    try {
+      await emergencyService.fulfillRequest(reqId);
+      await loadRequests(true);
+    } catch (err: any) {
+      setError(err?.response?.data?.error?.message || 'Failed to complete requisition fulfillment.');
+    } finally {
+      setFulfillingId(null);
     }
   };
 
@@ -267,6 +281,18 @@ export default function HospitalRequestsPage() {
                               title="Broadcast shortage to donors & blood banks"
                             >
                               ⚠️ Broadcast Shortage
+                            </Button>
+                          )}
+                          {r.status !== 'FULFILLED' && r.status !== 'CANCELLED' && (r.status === 'IN_PROGRESS' || r.status === 'CONFIRMED' || r.has_accepted_donor) && (
+                            <Button
+                              variant="success"
+                              size="sm"
+                              className="text-xs h-7 px-2 font-bold whitespace-nowrap shadow-sm"
+                              onClick={() => handleQuickFulfill(r.id)}
+                              isLoading={fulfillingId === r.id}
+                              title="Mark blood units received and requisition as fulfilled"
+                            >
+                              ✓ Fulfill
                             </Button>
                           )}
                           <Link href={`/emergency/track/${r.request_number}`}>

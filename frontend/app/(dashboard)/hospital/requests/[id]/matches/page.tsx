@@ -27,6 +27,7 @@ export default function HospitalMatchingWorkspacePage() {
   const [isLoadingRequest, setIsLoadingRequest] = useState<boolean>(true);
   const [isMatchingRunning, setIsMatchingRunning] = useState<boolean>(false);
   const [isEscalating, setIsEscalating] = useState<boolean>(false);
+  const [isFulfilling, setIsFulfilling] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [actionMessage, setActionMessage] = useState<string | null>(null);
 
@@ -131,6 +132,26 @@ export default function HospitalMatchingWorkspacePage() {
     }
   };
 
+  const handleFulfillRequest = async () => {
+    if (!requestId) return;
+    try {
+      setIsFulfilling(true);
+      setError(null);
+      const res = await emergencyService.fulfillRequest(requestId);
+      if (res.success) {
+        setActionMessage(`Requisition ${request?.request_number || requestId} successfully marked as FULFILLED.`);
+        await fetchRequestDetails();
+        await fetchMatches(searchRadiusRef.current);
+      } else {
+        setError(res.message || 'Failed to complete requisition fulfillment.');
+      }
+    } catch (err: any) {
+      setError(err?.response?.data?.error?.message || 'Failed to complete requisition fulfillment.');
+    } finally {
+      setIsFulfilling(false);
+    }
+  };
+
   useEffect(() => {
     fetchRequestDetails();
     fetchMatches(searchRadiusRef.current);
@@ -211,17 +232,6 @@ export default function HospitalMatchingWorkspacePage() {
         </div>
       )}
 
-      {/* Accepted donor response banner */}
-      {acceptedDonors.length > 0 && (
-        <div className="p-4 bg-success-subtle border border-success text-success-foreground font-bold rounded-xl text-sm space-y-1">
-          {acceptedDonors.map(d => (
-            <div key={d.id} className="flex items-center justify-between">
-              <span>✅ <strong>{d.name}</strong> ({d.blood_type}) has accepted this emergency request.</span>
-              <span className="text-xs bg-success text-success-foreground px-2 py-0.5 rounded font-bold">Donor Accepted</span>
-            </div>
-          ))}
-        </div>
-      )}
 
       {/* Hospital Triage: In-House Review & Escalation Card */}
       {request?.status === 'PENDING' && (
@@ -313,6 +323,23 @@ export default function HospitalMatchingWorkspacePage() {
               >
                 Refresh matching results
               </Button>
+              {request?.status !== 'FULFILLED' && (request?.status === 'IN_PROGRESS' || request?.status === 'CONFIRMED' || acceptedDonors.length > 0) && (
+                <Button
+                  variant="success"
+                  size="sm"
+                  onClick={handleFulfillRequest}
+                  isLoading={isFulfilling}
+                  className="font-bold shadow-sm whitespace-nowrap"
+                  title="Record blood units received and mark requisition as fulfilled"
+                >
+                  ✓ Mark Fulfilled
+                </Button>
+              )}
+              {request?.status === 'FULFILLED' && (
+                <Badge variant="success" size="md" className="font-bold whitespace-nowrap">
+                  ✓ Fulfilled
+                </Badge>
+              )}
             </div>
           </div>
 
@@ -399,21 +426,36 @@ export default function HospitalMatchingWorkspacePage() {
 
           {/* Accepted Donor Alert — shown immediately when any donor accepts */}
           {acceptedDonors.length > 0 && (
-            <div className="p-4 bg-success/10 border-2 border-success/50 rounded-xl flex items-start gap-3 shadow-sm animate-pulse-once">
-              <span className="text-2xl shrink-0">✅</span>
-              <div className="flex-1">
-                <p className="font-bold text-success text-sm">
-                  {acceptedDonors.length === 1
-                    ? `${acceptedDonors[0].name} has accepted this emergency request!`
-                    : `${acceptedDonors.length} donors have accepted this emergency request!`}
-                </p>
-                <p className="text-xs text-success/80 mt-0.5">
-                  The accepting donor{acceptedDonors.length > 1 ? 's are' : ' is'} highlighted below. Please review and confirm the donation to proceed.
-                </p>
+            <div className="p-4 bg-success/10 border-2 border-success/50 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm animate-pulse-once">
+              <div className="flex items-start gap-3">
+                <span className="text-2xl shrink-0">✅</span>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <p className="font-bold text-success text-sm">
+                      {acceptedDonors.length === 1
+                        ? `${acceptedDonors[0].name} (${acceptedDonors[0].blood_type}) has accepted this emergency request!`
+                        : `${acceptedDonors.length} donors have accepted this emergency request!`}
+                    </p>
+                    <Badge variant="success" size="sm" className="shrink-0 font-bold">
+                      ✓ Donor Accepted
+                    </Badge>
+                  </div>
+                  <p className="text-xs text-success/80 mt-1">
+                    The accepting donor is highlighted below. Once the blood units are received at your facility, click <strong>Mark Fulfilled</strong> to complete this requisition.
+                  </p>
+                </div>
               </div>
-              <Badge variant="success" size="sm" className="shrink-0 font-bold whitespace-nowrap">
-                🩸 Action Required
-              </Badge>
+              {request?.status !== 'FULFILLED' && (
+                <Button
+                  variant="success"
+                  size="md"
+                  onClick={handleFulfillRequest}
+                  isLoading={isFulfilling}
+                  className="shrink-0 font-bold shadow-md whitespace-nowrap flex items-center gap-1.5"
+                >
+                  ✓ Mark Fulfilled ({request?.units_required || 1} Units Received)
+                </Button>
+              )}
             </div>
           )}
 
