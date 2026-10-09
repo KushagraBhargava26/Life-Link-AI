@@ -379,117 +379,135 @@ export default function HospitalMatchingWorkspacePage() {
 
       {/* Candidate Recommendation Sections */}
       {totalCandidates > 0 && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Blood Banks Column */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="text-lg">🏥</span>
-                <h2 className="text-lg font-bold text-text">Verified Blood Banks</h2>
-                <Badge variant="info" size="sm">{bloodBanks.length}</Badge>
-              </div>
-              <span className="text-xs text-text-muted">Ranked by stock & proximity</span>
+        <div className="space-y-4">
+          <div className="p-3.5 bg-primary/10 border border-primary/25 rounded-xl text-xs sm:text-sm text-foreground flex items-center justify-between gap-3 shadow-sm">
+            <div className="flex items-center gap-2">
+              <span className="text-base">⚡</span>
+              <span>
+                <strong>Automatic Shortlisting Active:</strong> All <strong>{totalCandidates} eligible candidates</strong> ({bloodBanks.length} blood banks, {donors.length} individual donors) have been automatically shortlisted based on medical compatibility, stock, and proximity.
+              </span>
             </div>
-
-            {bloodBanks.length === 0 ? (
-              <div className="p-6 rounded-xl border border-border/80 bg-card text-center text-sm text-text-muted">
-                No blood banks with compatible unreserved stock found in {searchRadius} km.
-              </div>
-            ) : (
-              bloodBanks.map((bb) => (
-                <Card
-                  key={bb.id}
-                  className={`border-border transition-all ${
-                    bb.status === 'SHORTLISTED'
-                      ? 'ring-2 ring-success/50 bg-success/5'
-                      : bb.status === 'DISMISSED'
-                      ? 'opacity-60 bg-surface/30'
-                      : 'hover:border-primary/40'
-                  }`}
-                >
-                  <CardContent className="p-5 space-y-3">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2">
-                          <span className="font-mono text-xs font-bold text-primary bg-primary/10 px-2 py-0.5 rounded">
-                            #{bb.rank}
-                          </span>
-                          <h3 className="font-bold text-text text-base">{bb.name}</h3>
-                        </div>
-                        <p className="text-xs text-text-muted">
-                          📍 {bb.location_display}
-                        </p>
-                      </div>
-                      <div className="flex flex-col items-end gap-1">
-                        <Badge variant="success" size="sm">
-                          {bb.units_available} Units Available
-                        </Badge>
-                        <Badge variant="outline" size="sm">
-                          {bb.compatibility_status}
-                        </Badge>
-                      </div>
-                    </div>
-
-                    {/* Explainability Bullets */}
-                    <div className="bg-surface/50 p-3 rounded-lg border border-border/60 space-y-1 text-xs text-text-muted">
-                      <span className="font-semibold text-text block mb-1">Recommendation Audit:</span>
-                      {bb.explanation.map((exp, idx) => (
-                        <div key={idx} className="flex items-start gap-1.5">
-                          <span className="text-success font-bold">✓</span>
-                          <span>{exp}</span>
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* Operational Action Controls */}
-                    <div className="flex items-center justify-between pt-2 border-t border-border/60">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-medium text-text-muted">
-                          Status: <strong className="text-text">{bb.status}</strong>
-                        </span>
-                        {bb.blood_bank_response_status && (
-                          <Badge
-                            variant={
-                              bb.blood_bank_response_status === 'ACCEPTED' || bb.blood_bank_response_status === 'PARTIALLY_ACCEPTED'
-                                ? 'success'
-                                : 'critical'
-                            }
-                            className="text-[10px] font-bold"
-                          >
-                            {bb.blood_bank_response_status === 'ACCEPTED'
-                              ? `✓ Stock Committed (${bb.units_committed || bb.units_available}u)`
-                              : bb.blood_bank_response_status === 'PARTIALLY_ACCEPTED'
-                              ? `✓ Partial Commit (${bb.units_committed}u)`
-                              : '✕ Declined'}
-                          </Badge>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {bb.status !== 'SHORTLISTED' && (
-                          <Button
-                            variant="secondary"
-                            size="sm"
-                            onClick={() => handleCandidateStatusUpdate(bb.id, 'SHORTLISTED')}
-                          >
-                            ⭐ Shortlist
-                          </Button>
-                        )}
-                        {bb.status !== 'DISMISSED' && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleCandidateStatusUpdate(bb.id, 'DISMISSED')}
-                          >
-                            Dismiss
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
-            )}
+            <Badge variant="success" size="sm" className="shrink-0 font-bold">
+              ✓ Auto-Shortlisted
+            </Badge>
           </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Blood Banks Column */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="text-lg">🏥</span>
+                  <h2 className="text-lg font-bold text-text">Verified Blood Banks</h2>
+                  <Badge variant="info" size="sm">{bloodBanks.length}</Badge>
+                </div>
+                <span className="text-xs text-text-muted">Ranked by stock & proximity</span>
+              </div>
+
+              {bloodBanks.length === 0 ? (
+                <div className="p-6 rounded-xl border border-border/80 bg-card text-center text-sm text-text-muted">
+                  No blood banks with compatible unreserved stock found in {searchRadius} km.
+                </div>
+              ) : (
+                bloodBanks.map((bb) => (
+                  <Card
+                    key={bb.id}
+                    className={`border-border transition-all ${
+                      bb.status === 'SHORTLISTED'
+                        ? 'ring-2 ring-success/50 bg-success/5'
+                        : bb.status === 'DISMISSED'
+                        ? 'opacity-60 bg-surface/30'
+                        : 'hover:border-primary/40'
+                    }`}
+                  >
+                    <CardContent className="p-5 space-y-3">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono text-xs font-bold text-primary bg-primary/10 px-2 py-0.5 rounded">
+                              #{bb.rank}
+                            </span>
+                            <h3 className="font-bold text-text text-base">{bb.name}</h3>
+                          </div>
+                          <p className="text-xs text-text-muted">
+                            📍 {bb.location_display}
+                          </p>
+                        </div>
+                        <div className="flex flex-col items-end gap-1">
+                          <Badge variant="success" size="sm">
+                            {bb.units_available} Units Available
+                          </Badge>
+                          <Badge variant="outline" size="sm">
+                            {bb.compatibility_status}
+                          </Badge>
+                        </div>
+                      </div>
+
+                      {/* Explainability Bullets */}
+                      <div className="bg-surface/50 p-3 rounded-lg border border-border/60 space-y-1 text-xs text-text-muted">
+                        <span className="font-semibold text-text block mb-1">Recommendation Audit:</span>
+                        {bb.explanation.map((exp, idx) => (
+                          <div key={idx} className="flex items-start gap-1.5">
+                            <span className="text-success font-bold">✓</span>
+                            <span>{exp}</span>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Operational Action Controls */}
+                      <div className="flex items-center justify-between pt-2 border-t border-border/60">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-medium text-text-muted">
+                            Status: <strong className="text-text">{bb.status}</strong>
+                          </span>
+                          {bb.blood_bank_response_status && (
+                            <Badge
+                              variant={
+                                bb.blood_bank_response_status === 'ACCEPTED' || bb.blood_bank_response_status === 'PARTIALLY_ACCEPTED'
+                                  ? 'success'
+                                  : 'critical'
+                              }
+                              className="text-[10px] font-bold"
+                            >
+                              {bb.blood_bank_response_status === 'ACCEPTED'
+                                ? `✓ Stock Committed (${bb.units_committed || bb.units_available}u)`
+                                : bb.blood_bank_response_status === 'PARTIALLY_ACCEPTED'
+                                ? `✓ Partial Commit (${bb.units_committed}u)`
+                                : '✕ Declined'}
+                            </Badge>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {bb.status === 'SHORTLISTED' ? (
+                            <Badge variant="success" size="sm" className="font-bold">
+                              ⭐ Shortlisted (Auto)
+                            </Badge>
+                          ) : (
+                            <Button
+                              variant="secondary"
+                              size="sm"
+                              onClick={() => handleCandidateStatusUpdate(bb.id, 'SHORTLISTED')}
+                            >
+                              ⭐ Shortlist
+                            </Button>
+                          )}
+                          {bb.status !== 'DISMISSED' && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleCandidateStatusUpdate(bb.id, 'DISMISSED')}
+                              className="text-text-muted hover:text-critical"
+                            >
+                              Dismiss
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))
+              )}
+            </div>
 
           {/* Voluntary Donors Column */}
           <div className="space-y-4">
@@ -588,7 +606,11 @@ export default function HospitalMatchingWorkspacePage() {
                           )}
                         </div>
                         <div className="flex items-center gap-2">
-                          {donor.status !== 'SHORTLISTED' && (
+                          {donor.status === 'SHORTLISTED' ? (
+                            <Badge variant="success" size="sm" className="font-bold">
+                              ⭐ Shortlisted (Auto)
+                            </Badge>
+                          ) : (
                             <Button
                               variant="secondary"
                               size="sm"
@@ -615,7 +637,8 @@ export default function HospitalMatchingWorkspacePage() {
             )}
           </div>
         </div>
-      )}
-    </div>
-  );
+      </div>
+    )}
+  </div>
+);
 }

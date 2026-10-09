@@ -238,8 +238,8 @@ class MatchingService:
                 ai_score=None,
                 distance_km=bb_item["distance_km"],
                 units_available=bb_item["units_available"],
-                status=MatchCandidateStatusEnum.PROPOSED,
-                explanation=bb_item["explanation"],
+                status=MatchCandidateStatusEnum.SHORTLISTED,
+                explanation=bb_item["explanation"] + ["Auto-shortlisted based on verified stock & proximity"],
             )
             db_candidates.append(cand)
 
@@ -269,10 +269,10 @@ class MatchingService:
                     total_score=bb_item["total_score"],
                     distance_km=bb_item["distance_km"],
                     units_available=bb_item["units_available"],
-                    status="PROPOSED",
+                    status="SHORTLISTED",
                     blood_bank_response_status=bb_resp_status,
                     units_committed=bb_units_committed,
-                    explanation=bb_item["explanation"],
+                    explanation=bb_item["explanation"] + ["Auto-shortlisted based on verified stock & proximity"],
                     location_display=loc_disp,
                     is_compatible=True,
                 )
@@ -298,8 +298,8 @@ class MatchingService:
                 ai_score=d_item.get("ai_score"),
                 distance_km=d_item.get("distance_km"),
                 units_available=1,
-                status=MatchCandidateStatusEnum.PROPOSED,
-                explanation=d_item["explanation"],
+                status=MatchCandidateStatusEnum.SHORTLISTED,
+                explanation=d_item["explanation"] + ["Auto-shortlisted based on blood compatibility & active availability"],
             )
             db_candidates.append(cand)
 
@@ -330,9 +330,9 @@ class MatchingService:
                     total_score=d_item["total_score"],
                     distance_km=d_item.get("distance_km"),
                     units_available=1,
-                    status="PROPOSED",
+                    status="SHORTLISTED",
                     donor_response_status=donor_resp_status,
-                    explanation=d_item["explanation"],
+                    explanation=d_item["explanation"] + ["Auto-shortlisted based on blood compatibility & active availability"],
                     location_display=loc_disp,
                     is_compatible=True,
                 )
@@ -688,9 +688,9 @@ class MatchingService:
                             total_score=1.0,
                             distance_km=None,
                             units_available=1,
-                            status="PROPOSED",
+                            status="SHORTLISTED",
                             donor_response_status="ACCEPTED",
-                            explanation=["Accepted emergency requisition via donor portal"],
+                            explanation=["Accepted emergency requisition via donor portal (Auto-shortlisted)"],
                             location_display=loc,
                             is_compatible=True,
                         )

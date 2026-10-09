@@ -111,6 +111,19 @@ class EmergencyService:
                     urgency=created.urgency_level,
                     city=created.city,
                 )
+
+                # Auto-shortlist all eligible donors and blood banks upon request generation
+                try:
+                    from app.modules.matching.service import MatchingService
+                    matching_service = MatchingService(self.db)
+                    await matching_service.execute_matching(
+                        emergency_request_id=created.id,
+                        user_id=requested_by,
+                    )
+                    logger.info("emergency_request_auto_shortlisted", request_id=str(created.id))
+                except Exception as auto_match_err:
+                    logger.warning("auto_shortlisting_failed", error=str(auto_match_err), request_id=str(created.id))
+
                 return created
             except IntegrityError as exc:
                 await self.db.rollback()
