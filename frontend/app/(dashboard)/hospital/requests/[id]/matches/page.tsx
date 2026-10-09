@@ -4,7 +4,7 @@
 // LifeLink AI — Hospital Matching & Coordination Workspace (Phase 1.6)
 // Architecture Reference: ARCHITECTURE.md ADR-004 & Section 17
 
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
@@ -23,6 +23,7 @@ export default function HospitalMatchingWorkspacePage() {
   const [request, setRequest] = useState<EmergencyRequestData | null>(null);
   const [matchRun, setMatchRun] = useState<MatchRun | null>(null);
   const [searchRadius, setSearchRadius] = useState<number>(50.0);
+  const searchRadiusRef = useRef<number>(50.0);
   const [isLoadingRequest, setIsLoadingRequest] = useState<boolean>(true);
   const [isMatchingRunning, setIsMatchingRunning] = useState<boolean>(false);
   const [isEscalating, setIsEscalating] = useState<boolean>(false);
@@ -54,7 +55,9 @@ export default function HospitalMatchingWorkspacePage() {
       const res = await matchingService.getMatches(requestId);
       if (res.success && res.data) {
         setMatchRun(res.data);
-        setSearchRadius(res.data.search_radius_km || radius);
+        const newRadius = res.data.search_radius_km || radius;
+        setSearchRadius(newRadius);
+        searchRadiusRef.current = newRadius;
       } else {
         setError('Matching results are unavailable. Try loading them again.');
       }
@@ -72,6 +75,7 @@ export default function HospitalMatchingWorkspacePage() {
       setError(null);
       setActionMessage(null);
       setSearchRadius(radius);
+      searchRadiusRef.current = radius;
       const res = await matchingService.runMatching(requestId, radius);
       if (res.success && res.data) {
         setMatchRun(res.data);
@@ -129,14 +133,15 @@ export default function HospitalMatchingWorkspacePage() {
 
   useEffect(() => {
     fetchRequestDetails();
-    fetchMatches(searchRadius);
+    fetchMatches(searchRadiusRef.current);
     
-    // Auto-poll matches every 15 seconds
+    // Auto-poll matches every 15 seconds to pick up donor acceptances
     const interval = setInterval(() => {
-      fetchMatches(searchRadius);
+      fetchMatches(searchRadiusRef.current);
     }, 15000);
     return () => clearInterval(interval);
-  }, [fetchRequestDetails, fetchMatches, searchRadius]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fetchRequestDetails, fetchMatches]);
 
   if (isLoadingRequest) {
     return (
@@ -391,6 +396,26 @@ export default function HospitalMatchingWorkspacePage() {
               ✓ Auto-Shortlisted
             </Badge>
           </div>
+
+          {/* Accepted Donor Alert — shown immediately when any donor accepts */}
+          {acceptedDonors.length > 0 && (
+            <div className="p-4 bg-success/10 border-2 border-success/50 rounded-xl flex items-start gap-3 shadow-sm animate-pulse-once">
+              <span className="text-2xl shrink-0">✅</span>
+              <div className="flex-1">
+                <p className="font-bold text-success text-sm">
+                  {acceptedDonors.length === 1
+                    ? `${acceptedDonors[0].name} has accepted this emergency request!`
+                    : `${acceptedDonors.length} donors have accepted this emergency request!`}
+                </p>
+                <p className="text-xs text-success/80 mt-0.5">
+                  The accepting donor{acceptedDonors.length > 1 ? 's are' : ' is'} highlighted below. Please review and confirm the donation to proceed.
+                </p>
+              </div>
+              <Badge variant="success" size="sm" className="shrink-0 font-bold whitespace-nowrap">
+                🩸 Action Required
+              </Badge>
+            </div>
+          )}
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Blood Banks Column */}

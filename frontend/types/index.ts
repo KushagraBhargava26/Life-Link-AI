@@ -313,6 +313,8 @@ export interface HospitalDashboardData {
     urgency_level: string;
     status: string;
     city: string;
+    has_accepted_donor?: boolean;
+    accepted_donors_count?: number;
     created_at: string | null;
   }>;
 }

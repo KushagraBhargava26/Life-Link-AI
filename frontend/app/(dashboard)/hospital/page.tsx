@@ -306,9 +306,27 @@ export default function HospitalDashboardPage() {
                         </Badge>
                       </td>
                       <td className="px-4 py-3">
-                        <Badge variant="default" size="sm">
-                          {r.status}
-                        </Badge>
+                        <div className="flex flex-col gap-1 items-start">
+                          <Badge
+                            variant={
+                              r.status === 'FULFILLED'
+                                ? 'success'
+                                : r.status === 'IN_PROGRESS' || r.status === 'CONFIRMED'
+                                ? 'warning'
+                                : r.status === 'CANCELLED'
+                                ? 'critical'
+                                : 'default'
+                            }
+                            size="sm"
+                          >
+                            {r.status === 'PENDING' ? 'PENDING (TRIAGE)' : r.status}
+                          </Badge>
+                          {r.has_accepted_donor && (
+                            <span className="text-[11px] font-bold text-success flex items-center gap-1">
+                              ✅ Donor Accepted
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td className="px-4 py-3 text-xs text-muted-foreground">
                         {r.created_at ? new Date(r.created_at).toLocaleDateString() : 'Unavailable'}
