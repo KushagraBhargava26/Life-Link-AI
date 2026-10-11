@@ -7,6 +7,7 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
@@ -14,6 +15,11 @@ import { emergencyService } from '@/services/emergencyService';
 import { hospitalService } from '@/services/hospitalService';
 import { matchingService } from '@/services/matchingService';
 import { EmergencyRequestData, MatchRun, MatchCandidate, MatchCandidateStatus } from '@/types';
+
+const EmergencyDispatchMap = dynamic(
+  () => import('@/components/features/maps/EmergencyDispatchMap'),
+  { ssr: false }
+);
 
 export default function HospitalMatchingWorkspacePage() {
   const params = useParams();
@@ -458,6 +464,53 @@ export default function HospitalMatchingWorkspacePage() {
               )}
             </div>
           )}
+
+          {/* Spatial Candidate Radar Map */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-base">🗺️</span>
+                <h3 className="text-sm font-bold text-foreground">Spatial Candidate Radar Map</h3>
+                <Badge variant="info" size="sm">{totalCandidates} Candidates Plotted</Badge>
+              </div>
+              <span className="text-xs text-muted-foreground">{searchRadius} km radius search zone</span>
+            </div>
+            <EmergencyDispatchMap
+              hospital={{
+                name: request.hospital_name || 'Hospital Facility',
+                latitude: Number(request.latitude) || 19.0760,
+                longitude: Number(request.longitude) || 72.8777,
+              }}
+              candidates={[
+                ...bloodBanks.map((bb) => ({
+                  id: bb.id,
+                  name: bb.name,
+                  type: 'BLOOD_BANK' as const,
+                  bloodType: bb.blood_type,
+                  latitude: (bb as any).latitude || (Number(request.latitude) || 19.0760) + (bb.distance_km ? bb.distance_km / 111 : 0.02),
+                  longitude: (bb as any).longitude || (Number(request.longitude) || 72.8777) + (bb.distance_km ? bb.distance_km / 111 : 0.015),
+                  distanceKm: bb.distance_km,
+                  unitsAvailable: bb.units_available,
+                  status: bb.status,
+                })),
+                ...donors.map((d) => ({
+                  id: d.id,
+                  name: d.name,
+                  type: 'DONOR' as const,
+                  bloodType: d.blood_type,
+                  latitude: (d as any).latitude || (Number(request.latitude) || 19.0760) - (d.distance_km ? d.distance_km / 111 : 0.018),
+                  longitude: (d as any).longitude || (Number(request.longitude) || 72.8777) + (d.distance_km ? d.distance_km / 111 : 0.012),
+                  distanceKm: d.distance_km,
+                  unitsAvailable: 1,
+                  status: d.status,
+                  donorResponseStatus: d.donor_response_status,
+                  isAccepted: d.donor_response_status === 'ACCEPTED',
+                })),
+              ]}
+              searchRadiusKm={searchRadius}
+              heightClassName="h-[360px]"
+            />
+          </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Blood Banks Column */}

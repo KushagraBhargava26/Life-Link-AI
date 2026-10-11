@@ -6,6 +6,8 @@
 @tailwind components;
 @tailwind utilities;
 
+@import 'leaflet/dist/leaflet.css';
+
 /* =============================================================================
    Design Tokens — Semantic Light & Dark Themes
    ============================================================================= */

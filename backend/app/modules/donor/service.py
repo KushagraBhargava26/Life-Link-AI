@@ -468,6 +468,27 @@ class DonorService:
             except Exception as e:
                 logger.warning("notification_hook_failed", error=str(e))
 
+            # Real-Time WebSocket broadcast to hospital interfaces
+            try:
+                from app.modules.notification.websocket import ws_manager
+                donor_name_clean = donor_name if 'donor_name' in locals() else "Voluntary Donor"
+                await ws_manager.broadcast_all({
+                    "type": "DONOR_ACCEPTED",
+                    "title": "🚨 Voluntary Donor Accepted!",
+                    "message": f"{donor_name_clean} ({donor.blood_type}) accepted emergency request {req.request_number}.",
+                    "data": {
+                        "request_id": str(req.id),
+                        "request_number": req.request_number,
+                        "donor_name": donor_name_clean,
+                        "donor_blood_type": donor.blood_type,
+                        "hospital_name": req.hospital_name,
+                        "city": req.city,
+                        "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+                    }
+                })
+            except Exception as ws_err:
+                logger.warning("websocket_donor_accept_broadcast_failed", error=str(ws_err))
+
         return DonorOpportunityResponseSchema.model_validate(result_resp).model_dump(
             mode="json"
         )

@@ -191,8 +191,22 @@ class EmergencyService:
             req.fulfilled_at = now
             req.units_fulfilled = req.units_required
 
-        if notes:
-            req.notes = notes
+        if clean_status == EmergencyStatusEnum.FULFILLED.value:
+            try:
+                from app.modules.notification.websocket import ws_manager
+                await ws_manager.broadcast_all({
+                    "type": "REQUEST_FULFILLED",
+                    "title": "✓ Blood Requisition Fulfilled",
+                    "message": f"Emergency requisition {req.request_number} ({req.blood_type}) is completely fulfilled.",
+                    "data": {
+                        "request_id": str(req.id),
+                        "request_number": req.request_number,
+                        "blood_type": req.blood_type,
+                        "units_fulfilled": req.units_fulfilled,
+                    }
+                })
+            except Exception as ws_err:
+                logger.warning("websocket_fulfill_broadcast_failed", error=str(ws_err))
 
         await self.db.commit()
         await self.db.refresh(req)
@@ -233,6 +247,23 @@ class EmergencyService:
             )
         except Exception as exc:
             logger.warning("auto_matching_on_escalation_failed", error=str(exc), request_id=str(req.id))
+
+        try:
+            from app.modules.notification.websocket import ws_manager
+            await ws_manager.broadcast_all({
+                "type": "REQUEST_ESCALATED",
+                "title": "⚠️ Blood Shortage Broadcasted",
+                "message": f"Shortage broadcasted for {req.blood_type} ({req.units_required} units) at {req.hospital_name or 'Facility'}.",
+                "data": {
+                    "request_id": str(req.id),
+                    "request_number": req.request_number,
+                    "blood_type": req.blood_type,
+                    "units_required": req.units_required,
+                    "city": req.city,
+                }
+            })
+        except Exception as ws_err:
+            logger.warning("websocket_escalate_broadcast_failed", error=str(ws_err))
 
         logger.info(
             "emergency_request_escalated_to_external",

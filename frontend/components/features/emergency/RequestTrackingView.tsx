@@ -2,11 +2,17 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import { emergencyService } from '@/services/emergencyService';
 import type { EmergencyRequestData } from '@/types';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
+
+const EmergencyDispatchMap = dynamic(
+  () => import('@/components/features/maps/EmergencyDispatchMap'),
+  { ssr: false }
+);
 
 const statusLabels: Record<string, string> = {
   PENDING: 'Pending review',
@@ -135,6 +141,36 @@ export function RequestTrackingView({ requestId, isPublic = false }: { requestId
               {!isPublic && request.facility_address && <div className="sm:col-span-2 lg:col-span-3"><p className="text-xs font-medium text-muted-foreground">Facility address</p><p className="mt-1 break-words text-sm">{request.facility_address}</p></div>}
             </CardContent>
           </Card>
+
+          {/* Interactive Live Emergency Dispatch & Route ETA Map */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-lg">🗺️</span>
+                <h3 className="text-base font-bold text-foreground">Live Dispatch Map & Route ETA</h3>
+                {vehicleLocation && (
+                  <Badge variant="success" size="sm" className="font-bold">
+                    Active Telemetry
+                  </Badge>
+                )}
+              </div>
+              <span className="text-xs text-muted-foreground">
+                {request.city || 'Regional coverage'}
+              </span>
+            </div>
+
+            <EmergencyDispatchMap
+              hospital={{
+                name: request.hospital_name || 'Destination Hospital',
+                latitude: Number(request.latitude) || 19.0760,
+                longitude: Number(request.longitude) || 72.8777,
+                address: request.facility_address || undefined,
+              }}
+              vehicleTelemetry={vehicleLocation}
+              searchRadiusKm={50}
+              heightClassName="h-[380px]"
+            />
+          </div>
 
           {/* Live Vehicle / Dispatch Location Tracking Card */}
           {vehicleLocation && (

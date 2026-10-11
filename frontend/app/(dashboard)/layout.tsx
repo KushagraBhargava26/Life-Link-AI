@@ -10,6 +10,7 @@ import { useAuthStore } from '@/store/authStore';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { Sidebar } from '@/components/layout/Sidebar';
+import { NotificationToastHub } from '@/components/features/notifications/NotificationToastHub';
 
 export default function DashboardLayout({
   children,
@@ -53,6 +54,7 @@ export default function DashboardLayout({
           </div>
         </main>
       </div>
+      <NotificationToastHub />
       <Footer />
     </div>
   );

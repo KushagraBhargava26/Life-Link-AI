@@ -1,4 +1,4 @@
-﻿# backend/app/main.py
+# backend/app/main.py
 # LifeLink AI â€” FastAPI Application Entry Point
 # Architecture Reference: ARCHITECTURE.md Section 16 (Backend Architecture)
 #
@@ -163,7 +163,7 @@ from app.modules.emergency.router import router as emergency_router
 from app.modules.emergency.gps_router import gps_router
 from app.modules.matching.router import router as matching_router
 from app.modules.admin.router import router as admin_router
-# from app.modules.notification.router import router as notification_router
+from app.modules.notification.router import router as notification_router
 # from app.modules.ai_gateway.router import router as ai_gateway_router
 # from app.modules.analytics.router import router as analytics_router
 
@@ -179,7 +179,8 @@ app.include_router(matching_router, prefix=f"{API_V1_PREFIX}/matching", tags=["M
 app.include_router(gps_router, prefix=f"{API_V1_PREFIX}/emergency", tags=["GPS Telemetry"])
 app.include_router(matching_router, prefix=f"{API_V1_PREFIX}/hospitals/me", tags=["Matching & Coordination"])
 app.include_router(admin_router, prefix=f"{API_V1_PREFIX}/admin", tags=["Admin"])
-# app.include_router(notification_router, prefix=f"{API_V1_PREFIX}/notifications", tags=["Notifications"])
+app.include_router(notification_router, prefix=f"{API_V1_PREFIX}", tags=["Notifications"])
+app.include_router(notification_router, prefix=f"{API_V1_PREFIX}/notifications", tags=["Notifications"])
 # app.include_router(ai_gateway_router, prefix=f"{API_V1_PREFIX}/ai", tags=["AI Gateway"])
 # app.include_router(analytics_router, prefix=f"{API_V1_PREFIX}/analytics", tags=["Analytics"])
 
